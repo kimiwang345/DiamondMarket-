@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 游戏道具交易平台</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container" id="app">
+
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">💎</span>
+                    <span class="logo-text">注册</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <!-- 注册表单 -->
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2 class="auth-title">创建账户</h2>
+                <p class="auth-subtitle">注册成为平台会员</p>
+
+                <div class="auth-form">
+
+                    <div class="form-group">
+                        <label>昵称</label>
+                        <input type="text"
+                               v-model="nickname"
+                               placeholder="昵称"
+                               minlength="2"
+                               maxlength="20"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>账号</label>
+                        <input type="text"
+                               v-model="username"
+                               placeholder="账号"
+                               minlength="3"
+                               maxlength="20"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password"
+                               v-model="password"
+                               placeholder="密码（至少6位）"
+                               minlength="6"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>确认密码</label>
+                        <input type="password"
+                               v-model="confirmPwd"
+                               placeholder="请再次输入密码"
+                               minlength="6"
+                               required>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-primary auth-submit"
+                            v-on:click="register">
+                        注册
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <span>已有账户？</span>
+                    <a href="login.html" class="link-text">立即登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+
+    <!-- 注册逻辑 + 主题切换 -->
+    <script>
+
+        // 使用 tinyVue
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                username: "",
+                nickname: "",
+                password: "",
+                confirmPwd: ""
+            }
+        });
+
+        // 注册方法
+        vm.register = async function () {
+
+            // 前端校验
+            if (!vm.username || vm.username.length < 3) {
+                alert("账号至少 3 位");
+                return;
+            }
+            if (!vm.nickname || vm.nickname.length < 2) {
+                alert("昵称至少 2 位");
+                return;
+            }
+            if (!vm.password || vm.password.length < 6) {
+                alert("密码至少 6 位");
+                return;
+            }
+            if (vm.password !== vm.confirmPwd) {
+                alert("两次输入的密码不一致");
+                return;
+            }
+
+            // 调用后端接口
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    login_name: vm.username,
+                    nickname: vm.nickname,
+                    login_pwd: vm.password
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.code !== 0) {
+                alert(data.msg);
+                return;
+            }
+
+            alert("注册成功！即将跳转登录页面");
+            location.href = "login.html";
+        };
+    </script>
+
+</body>
+
+</html>

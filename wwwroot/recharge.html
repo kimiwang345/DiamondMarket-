@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>充值 - GameTrade</title>
+    <!-- 改为使用独立的样式文件 -->
+    <link rel="stylesheet" href="recharge-styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <a href="profile.html" class="back-btn">←</a>
+                <h1 class="header-title">充值</h1>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="recharge-container">
+                <div class="balance-info-card">
+                    <div class="balance-info-label">当前余额</div>
+                    <div class="balance-info-value">¥ {{amount}}</div>
+                </div>
+
+                <!-- 简化充值表单，只保留金额输入和两种支付方式 -->
+                <form class="recharge-form">
+                    <div class="form-section">
+                        <h3 class="form-section-title">充值金额</h3>
+                        <div class="form-group">
+                            <label class="form-label">输入金额,必须是100的整数倍</label>
+                            <input type="number" class="form-input" v-model="rechargeAmount" placeholder="请输入充值金额" min="100" required>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">支付方式</h3>
+                        <div class="payment-channels">
+                            <label class="payment-channel-item">
+                                <input type="radio" name="payChannel" value="usdt" checked>
+                                <div class="payment-channel-content">
+                                    <span class="payment-channel-icon">₮</span>
+                                    <span class="payment-channel-name">USDT支付</span>
+                                    <span class="payment-channel-desc">自动到账，推荐</span>
+                                </div>
+                            </label>
+
+                            <label class="payment-channel-item">
+                                <input type="radio" name="payChannel" value="manual">
+                                <div class="payment-channel-content">
+                                    <span class="payment-channel-icon">👨‍💼</span>
+                                    <span class="payment-channel-name">人工充值</span>
+                                    <span class="payment-channel-desc">管理员专用</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="recharge-note">
+                        <p>充值说明：</p>
+                        <ul>
+                            <li>USDT支付：生成付款地址后请在<span style="color:red">5分钟内</span>完成支付</li>
+                            <li>USDT支付后余额在1-3分钟内自动到账.</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="window.location.href='profile.html'">取消</button>
+                        <button type="button" class="btn-primary" v-on:click="recharge">确认充值</button>
+                    </div>
+                </form>
+
+                <div class="records-link">
+                    <a href="records.html" class="btn-action btn-full">查看充值提现记录</a>
+                </div>
+            </div>
+        </main>
+
+        <!-- USDT支付弹窗，包含二维码、倒计时、地址复制等功能 -->
+        <div id="usdtPaymentModal" class="modal" v-if="usdtRechargeModel">
+            <div class="modal-content usdt-payment-modal">
+                <div class="modal-header">
+                    <h2>USDT支付</h2>
+                    <span class="modal-close" onclick="closeUsdtModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="usdt-payment-container">
+                        <!-- 倒计时 -->
+                        <div class="payment-countdown">
+                            <div class="countdown-timer" id="countdownTimer">05:00</div>
+                            <div class="countdown-warning">请在倒计时结束前完成支付</div>
+                        </div>
+
+                        <!-- 支付状态 -->
+                        <div class="payment-status" id="paymentStatus">
+                            <div class="status-icon status-pending">⏳</div>
+                            <div class="status-text">等待支付</div>
+                        </div>
+
+                        <!-- 二维码 -->
+                        <div class="usdt-qrcode-section">
+                            <div class="usdt-qrcode" id="usdtQRCode">
+                                <img :src="dataUrl" alt="USDT支付二维码">
+                            </div>
+                            <div class="qrcode-hint">扫描二维码或复制地址支付</div>
+                        </div>
+
+                        <!-- 支付金额 -->
+                        <div class="usdt-amount-section">
+                            <div class="usdt-info-row">
+                                <span class="usdt-info-label">支付金额 (USDT)</span>
+                                <div class="usdt-info-value-wrapper">
+                                    <span class="usdt-info-value" id="usdtAmount">{{pay_amount}}</span>
+                                    <button type="button" class="copy-btn" onclick="copyToClipboard('usdtAmount', '金额')">复制</button>
+                                </div>
+                            </div>
+                            <div class="usdt-info-row">
+                                <div class="usdt-info-label">地址</div>
+                                <div class="usdt-info-value-wrapper">
+                                    <span class="usdt-address" id="usdtAddress">{{pay_url}}</span>
+                                    <button type="button" class="copy-btn" onclick="copyToClipboard('usdtAddress', '地址')">复制</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 支付提示 -->
+                        <div class="usdt-tips">
+                            <div class="tips-title">支付提示</div>
+                            <ul class="tips-list">
+                                <li>请转账<strong>精确金额</strong>，否则可能无法自动到账</li>
+                                <li>转账完成后系统将自动确认，请勿关闭此页面</li>
+                                <li>如超时未支付，请重新发起充值</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="cancelPayment()">取消支付</button>
+                    <button class="btn-primary" onclick="manualConfirm()">我已完成支付</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 人工充值弹窗 -->
+        <!--<div id="manualPaymentModal" class="modal"  v-if="manRechargeModel">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>人工充值</h2>
+                    <span class="modal-close" onclick="closeManualModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="manual-payment-info">
+                        <div class="manual-icon">👨‍💼</div>
+                        <div class="manual-amount">充值金额: <strong id="manualAmount">¥0.00</strong></div>
+                        <div class="manual-order">订单号: <strong id="manualOrderNo">-</strong></div>
+                        <div class="manual-tips">
+                            <p>您的充值申请已提交，请联系在线客服完成充值：</p>
+                            <ol>
+                                <li>截图保存此页面信息</li>
+                                <li>点击下方按钮联系客服</li>
+                                <li>按客服指引完成付款</li>
+                                <li>客服确认后将为您充值到账</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeManualModal()">关闭</button>
+                    <a href="profile.html" class="btn-primary">联系客服</a>
+                </div>
+            </div>
+        </div>-->
+
+        <!-- 支付成功弹窗 -->
+        <div id="successModal" class="modal" v-if="paySuccess">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="success-content">
+                        <div class="success-icon">✓</div>
+                        <div class="success-title">支付成功</div>
+                        <div class="success-amount" id="successAmount">¥{{rechargeAmount}}</div>
+                        <div class="success-message">充值金额已到账</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary btn-full" v-on:click="paySuccess=false">返回我的页面</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast提示 -->
+        <div id="toast" class="toast"></div>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">首页</span>
+            </a>
+            <a href="publish.html" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">发布</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
+            </a>
+        </nav>
+    </div>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                user_type:0,
+                amount: 0,
+                rechargeAmount:0,
+                pay_amount:0,
+                pay_url: "",
+                dataUrl:"",
+                recharge_log_id:0,
+                usdtRechargeModel:false,
+                manRechargeModel:false,
+                paySuccess:false,
+            },
+
+            methods: {
+                recharge() {
+                   const channel = document.querySelector('input[name="payChannel"]:checked').value;
+                    if (channel === 'usdt') {
+                        this.openUsdtPayment();
+
+                    } else if (channel === 'manual') {
+                        //人工充值的直接到账
+                        this.openManPayment();
+                    }
+                },
+                async openManPayment() {
+                    const res = await api("/api/finance/recharge", "POST", {
+                        pay_channel: "manual",
+                        amount: this.rechargeAmount
+                    });
+                    if (!res) return;
+                    loadData();
+                    this.paySuccess = true;
+                },
+                // 打开USDT支付弹窗
+                async openUsdtPayment() {
+                    const res = await api("/api/finance/recharge", "POST", {
+                        pay_channel: "usdt",
+                        amount: this.rechargeAmount
+                    });
+                    if (!res) return;
+                    vm.pay_amount = res.data.pay_amount;
+                    vm.pay_url = res.data.pay_url;
+                    vm.recharge_log_id = res.data.id;
+                    vm.dataUrl = res.dataUrl;
+                    vm.usdtRechargeModel = true;
+                    vm.$forceUpdate();
+
+                    // 调用接口生成USDT支付信息
+
+
+                    updateCountdownDisplay();
+                    updatePaymentStatus('pending');
+
+
+                    // 开始倒计时
+                    startCountdown();
+
+                    // 开始轮询支付状态
+                    // startPolling();
+                },
+            }
+        });
+        loadData();
+        // 加载数据
+        async function loadData() {
+            // 加载用户信息
+            const user = await api("/api/user/queryUser");
+            vm.user_type = user.data.user_type;
+            vm.amount = user.data.amount;
+            vm.$forceUpdate();
+        }
+
+        // 倒计时相关变量
+        let countdownInterval = null;
+        let pollingInterval = null;
+        let remainingSeconds = 300; // 5分钟
+
+
+
+
+        // 开始倒计时
+        function startCountdown() {
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                remainingSeconds--;
+                updateCountdownDisplay();
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownInterval);
+                    clearInterval(pollingInterval);
+                    showToast('支付超时，请重新发起充值');
+                    closeUsdtModal();
+                }
+            }, 1000);
+        }
+
+        // 更新倒计时显示
+        function updateCountdownDisplay() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            document.getElementById('countdownTimer').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // 少于1分钟时变红
+            const timerEl = document.getElementById('countdownTimer');
+            if (remainingSeconds <= 60) {
+                timerEl.classList.add('countdown-warning-red');
+            } else {
+                timerEl.classList.remove('countdown-warning-red');
+            }
+        }
+
+        // 开始轮询支付状态
+        function startPolling() {
+            clearInterval(pollingInterval);
+            let pollCount = 0;
+
+            pollingInterval = setInterval(() => {
+                pollCount++;
+                // 模拟API调用检查支付状态
+                checkPaymentStatus(pollCount);
+            }, 3000); // 每3秒轮询一次
+        }
+
+        // 检查支付状态（模拟）
+        function checkPaymentStatus(pollCount) {
+            // 模拟：第10次轮询后支付成功（实际应调用真实API）
+            // 这里为了演示，随机在一定次数后成功
+            if (pollCount >= 5 && Math.random() > 0.7) {
+                paymentSuccess();
+            }
+        }
+
+        // 支付成功
+        function paymentSuccess() {
+            clearInterval(countdownInterval);
+            clearInterval(pollingInterval);
+
+            updatePaymentStatus('success');
+
+            setTimeout(() => {
+                closeUsdtModal();
+                const amount = document.getElementById('rechargeAmount').value;
+                document.getElementById('successAmount').textContent = '¥' + parseFloat(amount).toFixed(2);
+                document.getElementById('successModal').style.display = 'flex';
+            }, 1500);
+        }
+
+        // 更新支付状态显示
+        function updatePaymentStatus(status) {
+            const statusEl = document.getElementById('paymentStatus');
+            const iconEl = statusEl.querySelector('.status-icon');
+            const textEl = statusEl.querySelector('.status-text');
+
+            iconEl.className = 'status-icon';
+
+            switch (status) {
+                case 'pending':
+                    iconEl.classList.add('status-pending');
+                    iconEl.textContent = '⏳';
+                    textEl.textContent = '等待支付';
+                    break;
+                case 'checking':
+                    iconEl.classList.add('status-checking');
+                    iconEl.textContent = '🔄';
+                    textEl.textContent = '确认中...';
+                    break;
+                case 'success':
+                    iconEl.classList.add('status-success');
+                    iconEl.textContent = '✓';
+                    textEl.textContent = '支付成功';
+                    break;
+                case 'failed':
+                    iconEl.classList.add('status-failed');
+                    iconEl.textContent = '✗';
+                    textEl.textContent = '支付失败';
+                    break;
+            }
+        }
+
+        // 手动确认支付
+        function manualConfirm() {
+            vm.usdtRechargeModel = false;
+        }
+
+        // 取消支付
+        function cancelPayment() {
+            if (confirm('确定要取消支付吗？')) {
+                closeUsdtModal();
+            }
+        }
+
+        // 关闭USDT支付弹窗
+        function closeUsdtModal() {
+            vm.usdtRechargeModel = false;
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(elementId, name) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(name + '已复制');
+            }).catch(() => {
+                // 降级方案
+                const input = document.createElement('input');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast(name + '已复制');
+            });
+        }
+
+        // Toast提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 - GameTrade</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">💎</span>
+                    <span class="logo-text">GameTrade</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+
+            <!-- 用户信息 -->
+            <div class="profile-header">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <h2 class="user-name">{{ nickname }}</h2>
+                        <p class="user-id">{{ login_name }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 余额 -->
+            <div class="balance-section">
+                <div class="balance-card">
+                    <div class="balance-label">账户余额</div>
+                    <div class="balance-amount">¥ {{ amount }}</div>
+                    <div class="balance-actions">
+                        <button class="btn-action" v-on:click="openRecharge" >充值</button>
+                        <button class="btn-action" v-on:click="openWithdraw"  v-if="user_type==0">提现</button>
+                        <button class="btn-action" v-on:click="openAdminWithdraw" v-if="user_type==1">提现处理</button>
+                    </div>
+                    <div class="balance-record">
+                        <a href="records.html">查看充提记录</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn"
+                            :class="{active: tab==='selling'}"
+                            v-on:click="switchTab('selling')">
+                        在售商品
+                    </button>
+
+                    <button class="tab-btn"
+                            :class="{active: tab==='purchased'}"
+                            v-on:click="switchTab('purchased')">
+                        购买记录
+                    </button>
+
+                    <button class="tab-btn"
+                            :class="{active: tab==='sold'}"
+                            v-on:click="switchTab('sold')">
+                        出售记录
+                    </button>
+
+                    <button class="tab-btn"
+                            :class="{active: tab==='amount'}"
+                            v-on:click="switchTab('amount')">
+                        余额记录
+                    </button>
+                </div>
+
+                <!-- ===== 在售商品 ===== -->
+                <div class="tab-content" v-if="tab==='selling'">
+                    <div class="record-list">
+                        <div class="no-data" v-if="selling.length === 0">
+                            暂无在售商品
+                        </div>
+                        <div class="record-item" v-for="item in selling" v-for-template>
+                            <div class="record-info">
+                                <div class="record-title">{{ item.diamond_amount }} 💎</div>
+                                <div class="record-meta">单价: ¥{{ item.unit_price }}/钻</div>
+                                <div class="record-time">发布于 {{ item.create_time }}</div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount">¥ {{ item.total_price }}</div>
+                                <button class="btn-small btn-danger"
+                                        v-on:click="offSale(item.id)">
+                                    下架
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 购买记录 ===== -->
+                <div class="tab-content" v-if="tab==='purchased'">
+                    <div class="record-list">
+                        <div class="no-data" v-if="purchased.length === 0">
+                            暂无购买记录
+                        </div>
+                        <div class="record-item" v-for="order in purchased">
+                            <div class="record-info">
+                                <div class="record-title">{{ order.diamond_amount }} 💎</div>
+                                <div class="record-meta">{{ order.order_no }}</div>
+                                <div class="record-meta">卖家: {{ order.seller_name }}</div>
+                                <div class="record-time">{{ order.create_time }}</div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount"> ¥ -{{ order.total_price }}</div>
+                                <div class="record-status status-completed">已完成</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 出售记录 ===== -->
+                <div class="tab-content" v-if="tab==='sold'">
+                    <div class="record-list">
+                        <div class="no-data" v-if="sold.length === 0">
+                            暂无出售记录
+                        </div>
+                        <div class="record-item" v-for="order in sold">
+                            <div class="record-info">
+                                <div class="record-title">{{ order.diamond_amount }} 💎</div>
+                                <div class="record-meta">{{ order.order_no }}</div>
+                                <div class="record-meta">买家: {{ order.buyer_name }}</div>
+                                <div class="record-time">{{ order.create_time }}</div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount"> ¥ +{{ order.total_price }}</div>
+                                <div class="record-status status-completed">已完成</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 余额记录 ===== -->
+                <div class="tab-content" v-if="tab==='amount'">
+                    <div class="record-list">
+                        <div class="no-data" v-if="balanceLogs.length === 0">
+                            暂无记录
+                        </div>
+                        <div class="record-item" v-for="order in balanceLogs">
+                            <div class="record-info">
+                                <div class="record-title">{{ order.before_amount }} 变 {{ order.after_amount }}</div>
+                                <div class="record-meta">{{ order.remark }}</div>
+                                <div class="record-time">{{ order.create_time }}</div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount"> ¥ {{ order.amount }}</div>
+                                <div class="record-status status-completed">已完成</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+        <div v-if="withdrawModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>提现</h2>
+                    <span class="modal-close" v-on:click="withdrawModal=false">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="balance-info">
+                        <span>可提现余额:</span>
+                        <span class="balance-value">¥ {{ amount }}</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提现金额</label>
+                        <input type="number" class="form-input" v-model="withdrawForm.amount" placeholder="请输入提现金额" min="1" max="{{amount}}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提现方式</label>
+                        <select class="form-input" v-model="withdrawForm.pay_channel">
+                            <option value="ZFB">支付宝</option>
+                            <option value="WX">微信</option>
+                            <option value="CARD">银行卡</option>
+                            <option value="USDT">USDT</option>
+                        </select>
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">收款人</label>
+                        <div class="form-group">
+                            <input type="text" class="form-input" id="paymentInfo" v-model="withdrawForm.name" placeholder="请输入收款信息">
+                        </div>
+                    </div>
+                    <!-- 收款二维码上传区域 -->
+                    <div class="form-group" id="qrcodeUploadSection"  v-if="withdrawForm.pay_channel=='WX'||withdrawForm.pay_channel=='ZFB'">
+                        <label class="form-label">上传收款码</label>
+                        <div class="qr-upload" id="uploadArea" onclick="document.getElementById('qrcodeFile').click()">
+                            <input type="file" id="qrcodeFile" accept="image/*" style="display: none; " v-model="withdrawForm.pay_url">
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <span class="upload-icon">📷</span>
+                                <span class="upload-hint">上传收款码,支持 JPG、PNG 格式</span>
+                            </div>
+                            <img id="qrcodePreview" class="qrcode-preview" style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- 收款信息填写区域 -->
+                    <div class="form-section" v-if="withdrawForm.pay_channel=='CARD'||withdrawForm.pay_channel=='USDT'">
+                        <label class="form-label" v-if="withdrawForm.pay_channel=='CARD'">银行卡号</label>
+                        <label class="form-label" v-if="withdrawForm.pay_channel=='USDT'">USDT地址</label>
+                        <div class="form-group">
+                            <input type="text" class="form-input" v-model="withdrawForm.pay_info" placeholder="请输入收款信息">
+                        </div>
+                    </div>
+                    <div class="withdraw-note">
+                        提现将在1-3个工作日内到账，手续费为提现金额的1%
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" v-on:click="withdrawModal=false">取消</button>
+                    <button class="btn-primary" v-on:click="confirmWithdraw">确认提现</button>
+                </div>
+            </div>
+        </div>
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">首页</span>
+            </a>
+            <a href="publish.html" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">发布</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
+            </a>
+        </nav>
+
+    </div>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+
+
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                withdrawModal: false,
+                nickname: "",
+                login_name: "",
+                user_type:0,
+                amount: 0,
+                tab: "selling",
+                selling: [],
+                purchased: [],
+                sold: [],
+                balanceLogs: [],
+
+                withdrawForm: {
+                    amount: 0,
+                    pay_channel: '',
+                    pay_url: '',
+                    pay_info: '',
+                    name: '',
+                },
+            }
+        });
+
+        // 加载数据
+        async function loadData() {
+            // 加载用户信息
+            const user = await api("/api/user/queryUser");
+            vm.nickname = user.data.nickname;
+            vm.login_name = user.data.login_name;
+            vm.user_type = user.data.user_type;
+            vm.amount = user.data.amount;
+            // 加载在售商品*/
+            const s = await api("/api/diamond/my-selling");
+            vm.selling = s.data;
+
+            // 加载购买记录*/
+            const p = await api("/api/order/my-purchased");
+            vm.purchased = p.data;
+
+            // 加载出售记录
+            const sd = await api("/api/order/my-sold");
+            vm.sold = sd.data;
+
+            // 加载余额变化记录
+            const bl = await api("/api/user/balance-log");
+            vm.balanceLogs = bl.data;
+            vm.$forceUpdate();
+        }
+        
+        vm.switchTab = function (t) {
+            vm.tab = t;
+        };
+
+        vm.offSale = async function offSale(id) {
+            if (!confirm("确认下架？")) return;
+            await api(`/api/diamond/off-sale/${id}`, "POST");
+            loadData();
+        };
+
+        vm.openRecharge = function () {
+            alert("功能正在开发中");
+        };
+
+        vm.openWithdraw = function () {
+
+            vm.withdrawForm = {
+                amount: 0,
+                pay_channel: '',
+                pay_url: '',
+                pay_info: '',
+                name: '',
+            };
+            vm.withdrawModal = true;
+        };
+
+        vm.openAdminWithdraw = function () {
+            window.location.href = "admin-withdraw.html"
+        }
+        vm.openRecharge = function () {
+            window.location.href = "recharge.html"
+        }
+        vm.confirmWithdraw = async function () {
+            if (!vm.withdrawForm.amount || vm.withdrawForm.amount <= 0) {
+                alert("请输入提现金额");
+                return;
+            }
+
+            if (!vm.withdrawForm.pay_channel) {
+                alert("请选择提现方式");
+                return;
+            }
+
+            if (!vm.withdrawForm.name) {
+                alert("请输入收款人姓名");
+                return;
+            }
+
+            if (!vm.withdrawForm.pay_url && (vm.withdrawForm.pay_channel === "WX" || vm.withdrawForm.pay_channel === "ZFB")) {
+                alert("请上传收款二维码");
+                return;
+            }
+
+            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "CARD" )) {
+                alert("请输入卡号");
+                return;
+            }
+
+            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "USDT" )) {
+                alert("请输入USDT地址");
+                return;
+            }
+
+            const res = await api("/api/finance/withdraw", "POST", vm.withdrawForm);
+
+            if (!res) return;
+            vm.withdrawModal = false;
+            loadData();
+            alert("提现申请已提交,预计1-3个工作日到账！");
+        };
+
+
+        loadData();
+    </script>
+
+
+    <script>
+        
+        // 点击上传
+        document.getElementById('qrcodeFile').addEventListener('change', async function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            // 预览
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('qrcodePreview').src = e.target.result;
+                document.getElementById('qrcodePreview').style.display = "block";
+                document.getElementById('uploadPlaceholder').style.display = "none";
+            };
+            reader.readAsDataURL(file);
+
+            // 上传到服务器
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/upload/qrcode", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.code === 0) {
+                // 把返回的图片URL挂到 tinyVue
+                vm.withdrawForm.pay_url = data.url;
+            } else {
+                alert(data.msg);
+            }
+        });
+    </script>
+
+</body>
+</html>

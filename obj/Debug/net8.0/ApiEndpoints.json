@@ -1,0 +1,316 @@
+[
+  {
+    "ContainingType": "DiamondMarket.Api.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Api.Controllers.AuthController\u002BLoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Api.Controllers.AuthController",
+    "Method": "Register",
+    "RelativePath": "api/Auth/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Api.Controllers.AuthController\u002BLoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "addRecyclingTasks",
+    "RelativePath": "api/Diamond/create_recycling_tasks",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.DiamondController\u002BAddRecyclingTasksReq",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "GetMySaleingList",
+    "RelativePath": "api/Diamond/my-selling",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "OffSale",
+    "RelativePath": "api/Diamond/off-sale/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "Publish",
+    "RelativePath": "api/Diamond/publish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.DiamondController\u002BPublishRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "queryRecyclingTasks",
+    "RelativePath": "api/Diamond/query_recycling_tasks",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "GetSaleList",
+    "RelativePath": "api/Diamond/sale-list",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.DiamondController",
+    "Method": "stopRecyclingTasks",
+    "RelativePath": "api/Diamond/stop_recycling_tasks",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.DiamondController\u002BAddRecyclingTasksReq",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "queryAdminWithdrawLogs",
+    "RelativePath": "api/Finance/adminWithdrawLogs/{status}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "closeWithdraw",
+    "RelativePath": "api/Finance/closeWithdraw",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.FinanceController\u002BCloseWithdrawRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "completeWithdraw",
+    "RelativePath": "api/Finance/completeWithdraw/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "dealWithdraw",
+    "RelativePath": "api/Finance/dealWithdraw/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "Recharge",
+    "RelativePath": "api/Finance/recharge",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.FinanceController\u002BRechargeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "queryrecharges",
+    "RelativePath": "api/Finance/recharge-logs",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "Withdraw",
+    "RelativePath": "api/Finance/withdraw",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.FinanceController\u002BWithdrawRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.FinanceController",
+    "Method": "querywithdraws",
+    "RelativePath": "api/Finance/withdraw-logs",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.OrderController",
+    "Method": "Buy",
+    "RelativePath": "api/Order/buy",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "DiamondMarket.Controllers.OrderController\u002BBuyRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.OrderController",
+    "Method": "queryMyPurchased",
+    "RelativePath": "api/Order/my-purchased",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.OrderController",
+    "Method": "queryMySold",
+    "RelativePath": "api/Order/my-sold",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.UploadController",
+    "Method": "UploadQrcode",
+    "RelativePath": "api/upload/qrcode",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.UserController",
+    "Method": "balanceLog",
+    "RelativePath": "api/User/balance-log",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiamondMarket.Controllers.UserController",
+    "Method": "GetUser",
+    "RelativePath": "api/User/queryUser",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 游戏道具交易平台</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" id="app">
+
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">💎</span>
+                    <span class="logo-text">登录</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <!-- 登录表单 -->
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2 class="auth-title">欢迎回来</h2>
+                <p class="auth-subtitle">登录您的账户继续交易</p>
+
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label>账号</label>
+                        <input type="text"
+                               v-model="username"
+                               placeholder="请输入账号"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password"
+                               v-model="password"
+                               placeholder="请输入密码"
+                               required>
+                    </div>
+
+                    <button type="button" class="btn btn-primary auth-submit" v-on:click="login">
+                        登录
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <span>还没有账户？</span>
+                    <a href="register.html" class="link-text">立即注册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <!-- 主题切换 + 登录逻辑 -->
+    <script>
+
+        // === 使用 tinyVue 创建页面模型 ===
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                username: "",
+                password: "",
+                remember: false
+            }
+        });
+
+        // 登录
+        vm.login = async function () {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    login_name: vm.username,
+                    login_pwd: vm.password
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.code !== 0) {
+                alert(data.msg);
+                return;
+            }
+            localStorage.setItem("token", data.token);
+            alert("登录成功！");
+            location.href = "profile.html";
+        };
+
+    </script>
+
+</body>
+</html>

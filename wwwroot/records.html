@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>充值提现记录 - GameTrade</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <a href="profile.html" class="back-btn">←</a>
+                <h1 class="header-title">充值提现记录</h1>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="records-container">
+
+                <!-- tabs -->
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <button class="tab-btn"
+                                :class="{active: tab==='withdraw'}"
+                                v-on:click="tab='withdraw'">
+                            提现记录
+                        </button>
+
+                        <button class="tab-btn"
+                                :class="{active: tab==='recharge'}"
+                                v-on:click="tab='recharge'">
+                            充值记录
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ====== 提现记录 ====== -->
+                <div class="tab-content" v-if="tab==='withdraw'">
+                    <div class="records-list">
+
+                        <!-- 无数据 -->
+                        <div class="no-data" v-if="withdrawLogs.length===0">
+                            暂无提现记录
+                        </div>
+
+                        <!-- 列表 -->
+                        <div class="record-item" v-for="item in withdrawLogs">
+                            <div class="record-info">
+                                <div class="record-title">
+                                    {{ item.pay_channel }} 💎
+                                </div>
+                                <div class="record-meta">
+                                    {{ item.order_no }}
+                                </div>
+                                <div class="record-time">
+                                    {{ item.create_time }}
+                                </div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount">¥ -{{ item.amount }}</div>
+                                <div class="record-status status-pending">
+                                    {{ getStatus(item.status) }}
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ====== 充值记录 ====== -->
+                <div class="tab-content" v-if="tab==='recharge'">
+                    <div class="records-list">
+
+                        <div class="no-data" v-if="rechargeLogs.length===0">
+                            暂无充值记录
+                        </div>
+
+                        <div class="record-item" v-for="item in rechargeLogs">
+                            <div class="record-info">
+                                <div class="record-title">{{ item.pay_channel }} 💎</div>
+                                <div class="record-meta">{{ item.order_no }}</div>
+                                <div class="record-time">{{ item.create_time }}</div>
+                            </div>
+
+                            <div class="record-right">
+                                <div class="record-amount">¥ +{{ item.amount }}</div>
+                                <div class="record-status status-completed">已完成</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">首页</span>
+            </a>
+            <a href="publish.html" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">发布</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                tab: "withdraw",
+
+                rechargeLogs: [],
+                withdrawLogs: []
+            },
+            methods: {
+                getStatus(status) {
+                    switch (status) {
+                        case 0: return "待处理";
+                        case 1: return "处理中";
+                        case 2: return "已完成";
+                        case 3: return "提现失败";
+                    }
+                    return "未知状态";
+                }
+            }
+        });
+        async function loadData() {
+
+            // === 获取提现记录 ===
+            const wd = await api("/api/finance/withdraw-logs", "POST");
+            if (wd) vm.withdrawLogs = wd.data;
+
+            // === 获取充值记录 ===
+            const rc = await api("/api/finance/recharge-logs", "POST");
+            if (rc) vm.rechargeLogs = rc.data;
+        }
+        loadData();
+    </script>
+
+</body>
+</html>

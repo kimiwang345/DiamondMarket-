@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏道具交易平台 - 首页</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 添加顶部导航栏，适配手机 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">💎</span>
+                <span class="logo-text">GameTrade</span>
+            </div>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="hero-section">
+            <h1 class="hero-title">安全可靠的游戏道具交易平台</h1>
+            <p class="hero-subtitle">专业的担保交易服务，让每一笔交易更安心</p>
+        </div>
+
+        <div class="cards-container">
+            <a href="diamond.html" class="feature-card">
+                <div class="card-icon diamond-icon">💎</div>
+                <h2 class="card-title">钻石交易</h2>
+                <p class="card-description">浏览和购买游戏钻石，支持批量购买和自动合并订单</p>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <div onclick="codeing()" class="feature-card">
+                <div class="card-icon guarantee-icon">🛡️</div>
+                <h2 class="card-title">担保交易</h2>
+                <p class="card-description">平台担保，资金安全有保障，交易更放心</p>
+                <div class="card-arrow">→</div>
+            </div>
+        </div>
+
+        <!--<div class="stats-section">
+            <div class="stat-item">
+                <div class="stat-number">10,000+</div>
+                <div class="stat-label">累计交易</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5,000+</div>
+                <div class="stat-label">活跃用户</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">交易成功率</div>
+            </div>
+        </div>-->
+    </main>
+
+    <!-- 添加底部导航栏，用于手机端页面切换 -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">首页</span>
+        </a>
+        <a href="publish.html" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">发布</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">我的</span>
+        </a>
+    </nav>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        
+        
+    </script>
+</body>
+</html>

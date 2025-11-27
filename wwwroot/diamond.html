@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钻石交易 - GameTrade</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="container">
+
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <a href="index.html" class="back-btn">←</a>
+                <div class="header-title">钻石交易市场</div>
+                <!-- toggleTheme 在 common.js 里 -->
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+
+            <!-- 批量购买区域 -->
+            <!--<div class="bulk-purchase-mobile">
+                <input type="number"
+                       class="input-field"
+                       placeholder="输入需要购买的钻石数量"
+                       min="1"
+                       v-model="bulkAmount"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                <button class="btn-primary" v-on:click="openBulk">
+                    批量购买
+                </button>
+            </div>-->
+
+            <!-- 在售商品列表 -->
+            <div class="products-list">
+
+                <!-- 无数据时 -->
+                <div class="no-data" v-if="items.length === 0">
+                    暂无在售商品
+                </div>
+
+                <!-- 有数据时 -->
+                <div class="product-card" v-for="item in items">
+                    <div class="product-header">
+                        <span class="seller-name">
+                            {{ item.nickname  }}
+                        </span>
+                        <span class="product-badge">在售</span>
+                    </div>
+                    <div class="product-body">
+                        <div class="product-info">
+                            <div class="product-amount">{{ item.diamond_amount }} 💎</div>
+                            <div class="product-unit">单价: ¥{{ item.unit_price }}/钻</div>
+                        </div>
+                        <div class="product-right">
+                            <div class="product-price">¥ {{ item.total_price }}</div>
+                            <button class="btn-buy"
+                                    v-on:click="openSingle(item)">
+                                购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 购买弹窗（单买 / 批量共用） -->
+            <div class="modal" v-if="showModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 v-if="modal.isBulk">批量购买订单</h2>
+                        <h2 v-if="!modal.isBulk">购买钻石</h2>
+                        <span class="modal-close" v-on:click="closeModal">&times;</span>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="order-summary">
+                            <div class="summary-row">
+                                <span>购买数量:</span>
+                                <span class="summary-value">{{ modal.amount }} 💎</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>合计金额:</span>
+                                <!-- 单买显示总价，批量可显示预估或 0 -->
+                                <span class="summary-value">
+                                    ¥ {{ modal.total}}
+                                </span>
+                            </div>
+                            <div class="summary-items">
+                                <div class="summary-note" v-if="modal.isBulk">
+                                    系统将自动为您选择最优惠的商品组合，实际扣款金额以成交为准
+                                </div>
+                                <div class="summary-note" v-else>
+                                    卖家: {{ modal.seller }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">游戏类型</label>
+                            <select class="form-input" v-model="modal.gameType" required>
+                                <option value="">请选择游戏类型</option>
+                                <option value="AGPoker">AGPoker</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">游戏账号</label>
+                            <input type="text"
+                                   class="form-input"
+                                   v-model="modal.gameAccount"
+                                   placeholder="请输入游戏账号"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">游戏密码</label>
+                            <input type="password"
+                                   class="form-input"
+                                   v-model="modal.gamePassword"
+                                   placeholder="请输入游戏密码"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-secondary" v-on:click="closeModal">取消</button>
+                        <button class="btn-primary" v-on:click="confirmPurchase">
+                            确认购买
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- 底部导航栏 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">首页</span>
+            </a>
+            <a href="publish.html" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">发布</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
+            </a>
+        </nav>
+
+    </div>
+
+    <!-- 公共脚本：tinyVue + api/主题 -->
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+
+    <script>
+        // vm 实例
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                // 列表数据
+                items: [],
+
+                // 批量购买输入
+                bulkAmount: "",
+
+                // 弹窗状态
+                showModal: false,
+                modal: {
+                    isBulk: false,
+                    itemId: null,
+                    seller: "",
+                    amount: 0,
+                    total: 0,
+                    gameType: "",
+                    gameAccount: "",
+                    gamePassword: ""
+                }
+            },
+            methods: {
+                // 加载在售商品列表
+                async loadData() {
+                    const res = await api("/api/diamond/sale-list", "GET");
+                    if (!res) return;
+                    // 后端返回 { code:0, data:[...] }
+                    this.items = res.data || [];
+
+                    // 如果 tinyVue 有 $forceUpdate，就调用确保刷新
+                    if (this.$forceUpdate) this.$forceUpdate();
+                },
+
+
+                // 打开批量购买弹窗
+                openBulk() {
+                    const num = parseInt(this.bulkAmount);
+                    if (!num || num <= 0) {
+                        alert("请输入有效的钻石数量");
+                        return;
+                    }
+
+                    this.modal.isBulk = true;
+                    this.modal.itemId = null;
+                    this.modal.seller = "";
+                    this.modal.amount = num;
+                    // 前端不预估价格，交给后端算；这里展示 0 或者你想要的预估
+                    this.modal.total = 0;
+                    this.modal.gameType = "AGPoker";
+                    this.modal.gameAccount = "";
+                    this.modal.gamePassword = "";
+
+                    this.showModal = true;
+                    
+                    this.$forceUpdate();
+                },
+
+                // 关闭弹窗
+                closeModal() {
+                    this.showModal = false;
+                    if (this.$forceUpdate) this.$forceUpdate();
+                },
+
+                // 确认购买（单买/批量）
+                async confirmPurchase() {
+                    if (!this.modal.gameType ||
+                        !this.modal.gameAccount ||
+                        !this.modal.gamePassword) {
+                        alert("请填写完整的游戏信息");
+                        return;
+                    }
+
+                    let url;
+                    let payload;
+
+                    if (this.modal.isBulk) {
+                        // 批量购买接口（你按后端实际改）
+                        url = "/api/order/bulk-buy";
+                        payload = {
+                            diamond_amount: this.modal.amount,
+                            game_type: this.modal.gameType,
+                            game_user: this.modal.gameAccount,
+                            game_pass: this.modal.gamePassword
+                        };
+                    } else {
+                        // 单个购买接口（你按后端实际改）
+                        url = "/api/order/buy";
+                        payload = {
+                            item_id: this.modal.itemId,
+                            game_type: this.modal.gameType,
+                            game_user: this.modal.gameAccount,
+                            diamond_amount: this.modal.amount,
+                            game_pass: this.modal.gamePassword
+                        };
+                    }
+
+                    const res = await api(url, "POST", payload);
+                    if (!res) return;
+
+                    alert("购买成功！");
+                    this.showModal = false;
+                    this.bulkAmount = "";
+                    // 重新加载列表
+                    await this.loadData();
+                }
+            }
+        });
+
+        // 首次进入页面加载列表
+        vm.loadData();
+
+        // 打开单个购买弹窗
+        function openSingle(item) {
+            vm.modal.isBulk = false;
+            vm.modal.itemId = item.id;
+            vm.modal.seller = item.nickname;
+            vm.modal.amount = item.diamond_amount;
+            vm.modal.total = item.total_price;
+            vm.modal.gameType = "AGPoker";
+            vm.modal.gameAccount = "";
+            vm.modal.gamePassword = "";
+
+            vm.showModal = true;
+            vm.$forceUpdate();
+        }
+    </script>
+
+</body>
+</html>

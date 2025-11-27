@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>担保交易 - GameTrade</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 手机版顶部导航 -->
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="header-title">担保交易</div>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="guarantee-info">
+            <div class="info-card">
+                <div class="info-icon">🛡️</div>
+                <h3>平台担保</h3>
+                <p>资金由平台托管，确保交易双方权益</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">⚡</div>
+                <h3>快速到账</h3>
+                <p>交易完成后，款项自动结算到账</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">✓</div>
+                <h3>安全可靠</h3>
+                <p>专业客服团队，全程保障交易安全</p>
+            </div>
+        </div>
+
+        <div class="guarantee-orders">
+            <h2 class="section-title">担保交易订单</h2>
+            <div class="order-list">
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">账号交易 #GT20240001</div>
+                        <div class="order-meta">
+                            <span>买家: 玩家A</span>
+                            <span>卖家: 玩家B</span>
+                        </div>
+                    </div>
+                    <div class="order-bottom">
+                        <div class="order-amount">¥ 1,500.00</div>
+                        <div class="order-status status-pending">进行中</div>
+                    </div>
+                </div>
+
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">装备交易 #GT20240002</div>
+                        <div class="order-meta">
+                            <span>买家: 玩家C</span>
+                            <span>卖家: 玩家D</span>
+                        </div>
+                    </div>
+                    <div class="order-bottom">
+                        <div class="order-amount">¥ 800.00</div>
+                        <div class="order-status status-completed">已完成</div>
+                    </div>
+                </div>
+
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">道具交易 #GT20240003</div>
+                        <div class="order-meta">
+                            <span>买家: 玩家E</span>
+                            <span>卖家: 玩家F</span>
+                        </div>
+                    </div>
+                    <div class="order-bottom">
+                        <div class="order-amount">¥ 350.00</div>
+                        <div class="order-status status-pending">等待确认</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">首页</span>
+        </a>
+        <a href="publish.html" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">发布</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">我的</span>
+        </a>
+    </nav>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        }
+
+        // 页面加载时恢复主题
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        });
+    </script>
+</body>
+</html>

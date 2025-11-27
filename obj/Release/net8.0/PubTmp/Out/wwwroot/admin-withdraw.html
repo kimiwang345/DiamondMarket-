@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提现处理 - 管理后台</title>
+    <!-- 更换为独立的管理后台样式文件 -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">💎</span>
+                    <span class="logo-text">提现处理</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+
+        <!-- 更新统计卡片结构 -->
+        <!--<div class="stats-container">
+        <div class="stat-card pending">
+            <span class="stat-value">5</span>
+            <span class="stat-label">待处理</span>
+        </div>
+        <div class="stat-card success">
+            <span class="stat-value">12</span>
+            <span class="stat-label">今日完成</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">¥8.5K</span>
+            <span class="stat-label">总金额</span>
+        </div>
+    </div>-->
+        <!-- 更新筛选器结构 -->
+        <div class="filter-container">
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterByStatus('-1', this)">全部</button>
+                <button class="filter-tab" onclick="filterByStatus('0', this)">待处理</button>
+                <button class="filter-tab" onclick="filterByStatus('1', this)">处理中</button>
+                <button class="filter-tab" onclick="filterByStatus('2', this)">已完成</button>
+                <button class="filter-tab" onclick="filterByStatus('3', this)">已关闭</button>
+            </div>
+        </div>
+
+        <!-- 更新提现列表结构 -->
+        <div class="withdraw-list">
+            <div class="no-data" v-if="withdrawLogs.length === 0">
+                暂无记录
+            </div>
+            <!-- 提现记录1 - 支付宝/微信 -->
+            <div class="withdraw-item" data-status="pending" v-for="item in withdrawLogs">
+                <div class="withdraw-item-body">
+                    <div class="withdraw-amount">
+                        <span class="amount-label">提现金额</span>
+                        <span class="amount-value">¥{{item.amount}}</span>
+                        <span class="withdraw-status pending">{{ getStatus(item.status) }}</span>
+                    </div>
+                    <div class="withdraw-info">
+                        <div class="info-row">
+                            <span class="info-label">订单号</span>
+                            <span class="info-value">
+                                {{item.order_no}}
+                                <button class="copy-btn" v-on:click="copyText(item.order_no)">复制</button>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">提现渠道</span>
+                            <span class="info-value">{{ getChannel(item.pay_channel) }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">收款人</span>
+                            <span class="info-value">{{item.name}}</span>
+                        </div>
+                        <div class="info-row" v-if="item.pay_info!=''&&(item.pay_channel=='CARD'||item.pay_channel=='USDT')">
+                            <span class="info-label" v-if="item.pay_channel=='CARD'">卡号</span>
+                            <span class="info-label" v-if="item.pay_channel=='USDT'">USDT地址</span>
+                            <span class="info-value">
+                                {{item.pay_info}}
+                                <button class="copy-btn" v-on:click="copyText(item.pay_info)">复制</button>
+                            </span>
+                        </div>
+
+                    </div>
+                    <div class="qrcode-section" v-if="item.pay_url!=''">
+                        <div class="qrcode-title">收款二维码</div>
+                        <div class="qrcode-container">
+                            <img :src="item.pay_url" style="width:200px;height:200px" onclick="viewImage(this.src)">
+                            <div class="qrcode-actions">
+                                <button class="qrcode-btn download" v-on:click="downloadImage(item.pay_url)">⬇️ 下载</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn reject" v-on:click="rejectWithdraw(item)" v-if="item.status==1">拒绝提现</button>
+                        <button class="action-btn approve" v-on:click="completeWithdraw(item)" v-if="item.status==1">完成提现</button>
+                        <button class="action-btn approve" v-on:click="dealOrder(item)" v-if="item.status==0">去处理</button>
+                    </div>
+                    <div class="withdraw-time">申请时间: {{item.create_time}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图片查看弹窗 -->
+        <div class="modal-overlay" id="imageModal" onclick="closeImageModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-title">收款二维码</div>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img id="modalImage" src="/placeholder.svg" alt="收款二维码" style="max-width: 100%; border-radius: 10px;">
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeImageModal()">关闭</button>
+                    <button class="modal-btn confirm" onclick="downViewImage()">下载</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 拒绝原因弹窗 -->
+        <div class="modal-overlay active" v-if="rejectModal">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-title">拒绝提现</div>
+                <textarea class="modal-input" id="rejectReason" placeholder="请输入拒绝原因..." style="height: 100px; resize: none;"></textarea>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" v-on:click="rejectModal=false">取消</button>
+                    <button class="modal-btn confirm" onclick="confirmReject()">确认拒绝</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast提示 -->
+        <div class="toast" id="toast"></div>
+
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span>首页</span>
+            </a>
+            <a href="admin-withdraw.html" class="nav-item active">
+                <span class="nav-icon">💰</span>
+                <span>提现管理</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <span class="nav-icon">👤</span>
+                <span>我的</span>
+            </a>
+        </nav>
+    </div>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                rejectModal: false,
+                withdrawLogs: [],
+                status: -1,
+                rejectReason:"",
+                rejectId:0,
+            },
+
+            methods: {
+                getStatus(status) {
+                    switch (status) {
+                        case 0: return "待处理";
+                        case 1: return "处理中";
+                        case 2: return "已完成";
+                        case 3: return "已关闭";
+                    }
+                    return "未知状态";
+                },
+                getChannel(channel) {
+                    switch (channel) {
+                        case 'WX': return "微信";
+                        case 'ZFB': return "支付宝";
+                        case "CARD": return "银行卡";
+                        case "USDT": return "USDT";
+                    }
+                    return "未知";
+                },
+                copyText(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('已复制: ' + text);
+                    }).catch(() => {
+                        showToast('复制失败');
+                    });
+                },
+            }
+        });
+
+        // 加载数据
+        async function loadData() {
+            // 加载购买记录*/
+            const p = await api(`/api/finance/adminWithdrawLogs/${vm.status}`, "POST");
+            if (!p) {
+                return;
+            }
+            vm.withdrawLogs = p.data;
+            vm.$forceUpdate();
+        }
+        loadData();
+
+        // 筛选状态
+        function filterByStatus(status, btn) {
+            // 更新标签页状态
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 筛选记录
+            const items = document.querySelectorAll('.withdraw-item');
+            items.forEach(item => {
+                if (status === 'all' || item.dataset.status === status) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            vm.status = status;
+            vm.$forceUpdate();
+            loadData();
+        }
+
+        // 查看图片
+        function viewImage(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function downViewImage() {
+            
+            const link = document.createElement('a');
+            link.href = document.getElementById('modalImage').src;
+            link.download = 'qrcode.png';
+            link.click();
+            showToast('图片下载中...');
+        }
+
+        // 关闭图片弹窗
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        // 下载图片
+        function downloadImage(imageSrc) {
+            const link = document.createElement('a');
+            link.href = imageSrc;
+            link.download = 'qrcode.png';
+            link.click();
+            showToast('图片下载中...');
+        }
+
+        async function dealOrder(item) {
+            if (confirm('确认修改该提现[' + item.order_no+']为处理中？')) {
+                const res = await api(`/api/finance/dealWithdraw/${item.id}`, "POST");
+                if (!res) return;
+                showToast('提现正在处理中,请尽快完成付款');
+
+                loadData();
+            }
+        }
+
+        // 完成提现
+        async function completeWithdraw(item) {
+            if (confirm('确认已完成付款并处理此提现申请？')) {
+                const res = await api(`/api/finance/completeWithdraw/${item.id}`, "POST");
+                if (!res) return;
+                showToast('提现已完成');
+
+                loadData();
+            }
+        }
+
+        // 拒绝提现
+        async function rejectWithdraw(item) {
+            vm.rejectId = item.id;
+            vm.rejectModal = true;
+        }
+
+
+        // 确认拒绝
+        async function confirmReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                showToast('请输入拒绝原因');
+                return;
+            }
+            const res = await api("/api/finance/closeWithdraw", "POST", {
+                id: vm.rejectId,
+                remark: reason
+            });
+            if (!res) return;
+            showToast('提现已拒绝');
+            vm.rejectModal = false;
+            loadData();
+            
+        }
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
