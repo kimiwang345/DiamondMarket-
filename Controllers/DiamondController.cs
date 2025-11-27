@@ -26,7 +26,7 @@ namespace DiamondMarket.Controllers
         {
             var list = await _db.diamond_sale_item_view
                 .Where(x => x.status == 1)
-                .OrderByDescending(x => x.create_time)
+                .OrderBy(x => x.unit_price)
                 .ToListAsync();
 
             return Ok(new { code = 0, msg = "ok", data = list });
