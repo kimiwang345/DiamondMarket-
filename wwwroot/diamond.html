@@ -186,7 +186,7 @@
             methods: {
                 // 加载在售商品列表
                 async loadData() {
-                    const res = await api("/api/diamond/sale-list", "GET");
+                    const res = await api("/api/diamond/salelist", "POST");
                     if (!res) return;
                     // 后端返回 { code:0, data:[...] }
                     this.items = res.data || [];
