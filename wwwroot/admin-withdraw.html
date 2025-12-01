@@ -118,7 +118,7 @@
         </div>
 
         <!-- 拒绝原因弹窗 -->
-        <div class="modal-overlay active" v-if="rejectModal">
+        <div class="modal-overlay active" v-if="rejectModal" style="display:none">
             <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-title">拒绝提现</div>
                 <textarea class="modal-input" id="rejectReason" placeholder="请输入拒绝原因..." style="height: 100px; resize: none;"></textarea>

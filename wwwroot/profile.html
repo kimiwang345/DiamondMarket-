@@ -279,12 +279,9 @@
 
         // 加载数据
         async function loadData() {
-            const [bl,user, s, p, sd] = await Promise.all([
-                api("/api/user/balance-log"),
+            const [user, s] = await Promise.all([
                 api("/api/user/queryUser"),
                 api("/api/diamond/my-selling"),
-                api("/api/order/my-purchased"),
-                api("/api/order/my-sold"),
                 
             ]);
 
@@ -293,16 +290,34 @@
             vm.user_type = user.data.user_type;
             vm.amount = user.data.amount;
             vm.selling = s.data;
-            vm.purchased = p.data;
-            vm.sold = sd.data;
-            vm.balanceLogs = bl.data;
 
             vm.$forceUpdate();
         }
 
         
-        vm.switchTab = function (t) {
+        async function switchTab(t) {
             vm.tab = t;
+            if (t =='selling') {
+                const s = await api("/api/diamond/my-selling");
+                if(s&&s.data)
+                    vm.selling = s.data;
+            }
+            if (t =='purchased') {
+                const s = await api("/api/order/my-purchased");
+                if(s&&s.data)
+                    vm.purchased = s.data;
+            }
+            if (t =='sold') {
+                const s = await api("/api/order/my-sold");
+                if(s&&s.data)
+                    vm.sold = s.data;
+            }
+            if (t =='amount') {
+                const s = await api("/api/user/balance-log");
+                if(s&&s.data)
+                    vm.balanceLogs = s.data;
+            }
+            vm.$forceUpdate();
         };
 
         vm.offSale = async function offSale(id) {
