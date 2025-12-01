@@ -22,7 +22,29 @@
         </header>
 
         <main class="main-content">
-
+            <!-- 新增最近三天平均单价展示区域 -->
+            <div class="price-stats-card">
+                <div class="price-stats-header">
+                    <span class="price-stats-title">近3日成交均价</span>
+                    <span class="price-stats-badge">实时数据</span>
+                </div>
+                <div class="price-stats-body">
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">¥{{unit_price}}</div>
+                        <div class="price-stat-label">平均单价/钻</div>
+                    </div>
+                    <div class="price-stat-divider"></div>
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">{{diamond_amount}}</div>
+                        <div class="price-stat-label">成交钻石数</div>
+                    </div>
+                    <div class="price-stat-divider"></div>
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">{{total_count}}</div>
+                        <div class="price-stat-label">成交笔数</div>
+                    </div>
+                </div>
+            </div>
             <!-- 发布类型选择 -->
             <div class="publish-type-selector">
                 <button class="type-btn"
@@ -43,13 +65,13 @@
 
                 <div class="publish-form">
 
-                    <div class="form-group">
-                        <label class="form-label">游戏类型</label>
-                        <select class="form-input" v-model="sell.gameType" required>
-                            <option value="">请选择游戏类型</option>
-                            <option value="AGPoker">AGPoker</option>
-                        </select>
-                    </div>
+                    <!--<div class="form-group">
+                <label class="form-label">游戏类型</label>
+                <select class="form-input" v-model="sell.gameType" required>
+                    <option value="">请选择游戏类型</option>
+                    <option value="AGPoker">AGPoker</option>
+                </select>
+            </div>-->
 
                     <div class="form-group">
                         <label class="form-label">游戏账号</label>
@@ -91,7 +113,7 @@
                                required>
                     </div>
 
-                    <div class="form-group" >
+                    <div class="form-group">
                         <label class="form-label">总价</label>
                         <div class="total-price">¥ {{ totalPrice }}</div>
                     </div>
@@ -227,7 +249,7 @@
                         mode: "sell",
                         recyclingTasks: {
                             id: 0,
-                            game_type:'',
+                            game_type:'AGPoker',
                             game_user:'',
                             game_pass:'',
                             request_diamond:0,
@@ -236,12 +258,15 @@
                             status:-1,
                         },
                         sell: {
-                            gameType: "",
+                            gameType: "AGPoker",
                             gameAccount: "",
                             gamePassword: "",
                             amount: "",
                             unitPrice: ""
                         },
+                        total_count: 0,
+                        unit_price: 0,
+                        diamond_amount: 0,
                     },
                     methods: {
                         goBack() {
@@ -309,7 +334,8 @@
                             if (!res) return;
                             alert("回收任务已停止！");
                             loadData();
-                        }
+                        },
+                        
                     }
                 });
 
@@ -343,7 +369,19 @@
             } 
             vm.$forceUpdate();
         }
+        async function loadData2() {
+            const res = await api("/api/diamond/salelistRecent", "POST");
+            if (!res) return;
+            // 后端返回 { code:0, data:[...] }
+            vm.total_count = res.total_count || 0;
+            vm.unit_price = res.unit_price || 0;
+            vm.diamond_amount = res.diamond_amount || 0;
+
+            // 如果 tinyVue 有 $forceUpdate，就调用确保刷新
+            vm.$forceUpdate();
+        }
         loadData();
+        loadData2();
     </script>
 
 </body>

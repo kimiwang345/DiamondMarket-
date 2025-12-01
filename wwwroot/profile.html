@@ -170,7 +170,7 @@
             </div>
 
         </main>
-        <div v-if="withdrawModal" class="modal">
+        <div v-if="withdrawModal" class="modal" style="display:none">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>提现</h2>
@@ -279,29 +279,27 @@
 
         // 加载数据
         async function loadData() {
-            // 加载用户信息
-            const user = await api("/api/user/queryUser");
+            const [bl,user, s, p, sd] = await Promise.all([
+                api("/api/user/balance-log"),
+                api("/api/user/queryUser"),
+                api("/api/diamond/my-selling"),
+                api("/api/order/my-purchased"),
+                api("/api/order/my-sold"),
+                
+            ]);
+
             vm.nickname = user.data.nickname;
             vm.login_name = user.data.login_name;
             vm.user_type = user.data.user_type;
             vm.amount = user.data.amount;
-            // 加载在售商品*/
-            const s = await api("/api/diamond/my-selling");
             vm.selling = s.data;
-
-            // 加载购买记录*/
-            const p = await api("/api/order/my-purchased");
             vm.purchased = p.data;
-
-            // 加载出售记录
-            const sd = await api("/api/order/my-sold");
             vm.sold = sd.data;
-
-            // 加载余额变化记录
-            const bl = await api("/api/user/balance-log");
             vm.balanceLogs = bl.data;
+
             vm.$forceUpdate();
         }
+
         
         vm.switchTab = function (t) {
             vm.tab = t;

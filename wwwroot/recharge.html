@@ -78,7 +78,7 @@
         </main>
 
         <!-- USDT支付弹窗，包含二维码、倒计时、地址复制等功能 -->
-        <div id="usdtPaymentModal" class="modal" v-if="usdtRechargeModel">
+        <div id="usdtPaymentModal" class="modal" v-if="usdtRechargeModel" style="display:none">
             <div class="modal-content usdt-payment-modal">
                 <div class="modal-header">
                     <h2>USDT支付</h2>
@@ -173,7 +173,7 @@
         </div>-->
 
         <!-- 支付成功弹窗 -->
-        <div id="successModal" class="modal" v-if="paySuccess">
+        <div id="successModal" class="modal" v-if="paySuccess" style="display:none">
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="success-content">
@@ -395,6 +395,7 @@
         // 手动确认支付
         function manualConfirm() {
             vm.usdtRechargeModel = false;
+            vm.$forceUpdate();
         }
 
         // 取消支付
@@ -407,6 +408,7 @@
         // 关闭USDT支付弹窗
         function closeUsdtModal() {
             vm.usdtRechargeModel = false;
+            vm.$forceUpdate();
         }
 
         // 复制到剪贴板

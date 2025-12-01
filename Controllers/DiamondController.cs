@@ -5,6 +5,7 @@ using DiamondMarket.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DiamondMarket.Controllers
 {
@@ -14,14 +15,16 @@ namespace DiamondMarket.Controllers
     public class DiamondController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IConfiguration _config;
 
-        public DiamondController(AppDbContext db)
+        public DiamondController(AppDbContext db, IConfiguration config)
         {
             _db = db;
+            _config = config;
         }
 
         // 列出在售商品
-        [HttpGet("sale-list")]
+        [HttpPost("salelist")]
         public async Task<IActionResult> GetSaleList()
         {
             var list = await _db.diamond_sale_item_view
@@ -30,6 +33,31 @@ namespace DiamondMarket.Controllers
                 .ToListAsync();
 
             return Ok(new { code = 0, msg = "ok", data = list });
+        }
+
+        // 列出在售商品
+        [HttpPost("salelistRecent")]
+        public async Task<IActionResult> salelistRecent()
+        {
+            DateTime start = DateTime.Now.AddDays(-3);
+            List<DiamondSaleItem> list = await _db.diamond_sale_item.Where(x => x.status == 2 && x.create_time > start)
+                .OrderBy(x => x.unit_price)
+                .ToListAsync();
+            int diamond_amount = 0;
+            decimal unit_price = 0;
+            decimal total_price = 0;
+            int total_count = 0;
+            foreach (DiamondSaleItem data in list) {
+
+                diamond_amount += data.diamond_amount;
+                total_price += data.total_price;
+            }
+            if (diamond_amount>0) {
+                unit_price = (total_price /diamond_amount);
+                total_count = list.Count;
+                unit_price = Math.Round(unit_price, 3);
+            }
+            return Ok(new { code = 0, msg = "ok", unit_price, total_count, diamond_amount });
         }
 
         // 列出在售商品
@@ -63,13 +91,25 @@ namespace DiamondMarket.Controllers
         public async Task<IActionResult> Publish([FromBody] PublishRequest req)
         {
             if (req.diamond_amount <= 0 || req.unit_price <= 0)
-                return BadRequest(new { code = 400, msg = "数量和单价必须大于0" });
+                return Ok(new { code = 400, msg = "数量和单价必须大于0" });
             var claim = User.FindFirst("user_id");
             if (claim == null)
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
 
             var userId = long.Parse(claim.Value);
 
+            string minUnitpriceStr = _config["Config:minUnitprice"];
+            string maxUnitpriceStr = _config["Config:maxUnitprice"];
+            decimal minUnitprice = 0;
+            decimal maxUnitprice = 0;
+            if (!string.IsNullOrEmpty(minUnitpriceStr))
+                minUnitprice = decimal.Parse(minUnitpriceStr);
+            if (!string.IsNullOrEmpty(maxUnitpriceStr))
+                maxUnitprice = decimal.Parse(maxUnitpriceStr);
+
+            if (req.unit_price> maxUnitprice|| req.unit_price< minUnitprice) {
+                return Ok(new { code = 400, msg = "单价错误,单价范围"+ minUnitprice+"-"+ maxUnitprice });
+            }
             // 创建/保存游戏账号
             var acc = new GameAccount
             {
@@ -77,7 +117,7 @@ namespace DiamondMarket.Controllers
                 game_type = req.game_type,
                 game_user = req.game_user,
                 game_pass = req.game_pass, // TODO: 加密
-                create_time = DateTime.UtcNow
+                create_time = DateTime.Now
             };
             _db.game_account.Add(acc);
             await _db.SaveChangesAsync();
@@ -92,7 +132,7 @@ namespace DiamondMarket.Controllers
                 unit_price = req.unit_price,
                 total_price = total,
                 status = 1,
-                create_time = DateTime.UtcNow
+                create_time = DateTime.Now
             };
 
             _db.diamond_sale_item.Add(item);

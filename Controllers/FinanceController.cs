@@ -48,6 +48,7 @@ namespace DiamondMarket.Controllers
             {
 
                 string usdtPayUrl = _config["Config:usdtPayUrl"];
+                double usdtToCny = Double.Parse(_config["Config:usdtToCny"].ToString());
                 if (string.IsNullOrEmpty(usdtPayUrl))
                 {
                     return Ok(new { code = 400, msg = "支付失败,通道未配置" });
@@ -55,7 +56,8 @@ namespace DiamondMarket.Controllers
                 dataUrl = QrCodeHelper.GenerateQrDataUrl(usdtPayUrl);
                 // 生成 100.00000 ~ 100.99999
                 Random rand = new Random();
-                double result = req.amount + rand.NextDouble();
+
+                double result = req.amount/ usdtToCny+rand.NextDouble();
 
                 // 格式化五位小数
                 string value = result.ToString("F5");

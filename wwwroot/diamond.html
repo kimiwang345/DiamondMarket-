@@ -20,20 +20,41 @@
         </header>
 
         <main class="main-content">
-
+            <!-- 新增最近三天平均单价展示区域 -->
+            <div class="price-stats-card">
+                <div class="price-stats-header">
+                    <span class="price-stats-title">近3日成交均价</span>
+                    <span class="price-stats-badge">实时数据</span>
+                </div>
+                <div class="price-stats-body">
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">¥{{unit_price}}</div>
+                        <div class="price-stat-label">平均单价/钻</div>
+                    </div>
+                    <div class="price-stat-divider"></div>
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">{{diamond_amount}}</div>
+                        <div class="price-stat-label">成交钻石数</div>
+                    </div>
+                    <div class="price-stat-divider"></div>
+                    <div class="price-stat-item">
+                        <div class="price-stat-value">{{total_count}}</div>
+                        <div class="price-stat-label">成交笔数</div>
+                    </div>
+                </div>
+            </div>
             <!-- 批量购买区域 -->
             <!--<div class="bulk-purchase-mobile">
-                <input type="number"
-                       class="input-field"
-                       placeholder="输入需要购买的钻石数量"
-                       min="1"
-                       v-model="bulkAmount"
-                       oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                <button class="btn-primary" v-on:click="openBulk">
-                    批量购买
-                </button>
-            </div>-->
-
+        <input type="number"
+               class="input-field"
+               placeholder="输入需要购买的钻石数量"
+               min="1"
+               v-model="bulkAmount"
+               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <button class="btn-primary" v-on:click="openBulk">
+            批量购买
+        </button>
+    </div>-->
             <!-- 在售商品列表 -->
             <div class="products-list">
 
@@ -99,13 +120,13 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <!--<div class="form-group">
                             <label class="form-label">游戏类型</label>
                             <select class="form-input" v-model="modal.gameType" required>
                                 <option value="">请选择游戏类型</option>
                                 <option value="AGPoker">AGPoker</option>
                             </select>
-                        </div>
+                        </div>-->
 
                         <div class="form-group">
                             <label class="form-label">游戏账号</label>
@@ -181,7 +202,10 @@
                     gameType: "",
                     gameAccount: "",
                     gamePassword: ""
-                }
+                },
+                total_count:0,
+                unit_price:0,
+                diamond_amount:0,
             },
             methods: {
                 // 加载在售商品列表
@@ -190,6 +214,17 @@
                     if (!res) return;
                     // 后端返回 { code:0, data:[...] }
                     this.items = res.data || [];
+
+                    // 如果 tinyVue 有 $forceUpdate，就调用确保刷新
+                    if (this.$forceUpdate) this.$forceUpdate();
+                },
+                async loadData2() {
+                    const res = await api("/api/diamond/salelistRecent", "POST");
+                    if (!res) return;
+                    // 后端返回 { code:0, data:[...] }
+                    this.total_count = res.total_count ||0;
+                    this.unit_price = res.unit_price ||0;
+                    this.diamond_amount = res.diamond_amount ||0;
 
                     // 如果 tinyVue 有 $forceUpdate，就调用确保刷新
                     if (this.$forceUpdate) this.$forceUpdate();
@@ -272,6 +307,7 @@
 
         // 首次进入页面加载列表
         vm.loadData();
+        vm.loadData2();
 
         // 打开单个购买弹窗
         function openSingle(item) {
