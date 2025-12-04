@@ -2,10 +2,12 @@
 using DiamondMarket.Data;
 using DiamondMarket.Models;
 using DiamondMarket.Models;
+using DiamondMarket.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using static DiamondMarket.Data.Common;
 
 namespace DiamondMarket.Controllers
 {
@@ -16,11 +18,12 @@ namespace DiamondMarket.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
-
-        public DiamondController(AppDbContext db, IConfiguration config)
+        private readonly IHttpClientFactory _httpFactory;
+        public DiamondController(AppDbContext db, IConfiguration config, IHttpClientFactory httpFactory)
         {
             _db = db;
             _config = config;
+            _httpFactory = httpFactory;
         }
 
         // 列出在售商品
@@ -100,6 +103,7 @@ namespace DiamondMarket.Controllers
 
             string minUnitpriceStr = _config["Config:minUnitprice"];
             string maxUnitpriceStr = _config["Config:maxUnitprice"];
+            string agApiUrl = _config["Config:agApiUrl"];
             decimal minUnitprice = 0;
             decimal maxUnitprice = 0;
             if (!string.IsNullOrEmpty(minUnitpriceStr))
@@ -110,6 +114,24 @@ namespace DiamondMarket.Controllers
             if (req.unit_price> maxUnitprice|| req.unit_price< minUnitprice) {
                 return Ok(new { code = 400, msg = "单价错误,单价范围"+ minUnitprice+"-"+ maxUnitprice });
             }
+            var http = _httpFactory.CreateClient();
+            var reqObj = new
+            {
+                loginName = req.game_user,
+                password = req.game_pass
+            };
+            var res = await http.PostAsJsonAsync(agApiUrl + "/zs/diamond/query", reqObj);
+            var obj = await res.Content.ReadFromJsonAsync<QueryDiamondResponse>();
+            LogManager.Info("请求ag接口[querydiamond],入参:" + reqObj + ",出参:" + await res.Content.ReadAsStringAsync());
+            if (obj == null || obj.code != 200) {
+                return Ok(new { code = 400, msg = "查询钻石余额异常,请检查游戏账号和密码是否正确"});
+            }
+            string diamondStr = obj.data.diamond;
+            int diamond = int.Parse(diamondStr);
+            if (diamond< req.diamond_amount) {
+                return Ok(new { code = 400, msg = "钻石不足" });
+            }
+
             // 创建/保存游戏账号
             var acc = new GameAccount
             {

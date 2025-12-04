@@ -2,6 +2,7 @@
 {
     using DiamondMarket.Data;
     using DiamondMarket.Models;
+    using DiamondMarket.Utils;
     using Microsoft.EntityFrameworkCore;
     using System.Net.Http.Json;
     using static DiamondMarket.Data.Common;
@@ -22,6 +23,7 @@
         public async Task<bool> ExecuteBuy(long buyerId, long itemId, string gameType, string gameUser, string gamePass)
         {
             string serviceFeeStr = _config["Config:serviceFee"];
+            string agApiUrl = _config["Config:AgApiUrl"];
             decimal serviceFee = 0;
             if (!string.IsNullOrEmpty(serviceFeeStr))
                 serviceFee = decimal.Parse(serviceFeeStr);
@@ -136,17 +138,18 @@
             // ---- 调用游戏平台赠送钻石 ----
             var sellerGameAcc = await _db.game_account.FindAsync(item.account_id);
             var http = _httpFactory.CreateClient();
-
-            var res = await http.PostAsJsonAsync("http://150.109.156.45:81/zs/diamond/giftDiamond", new
+            var reqObj = new
             {
                 loginName1 = sellerGameAcc.game_user,
                 password1 = sellerGameAcc.game_pass,
                 loginName2 = buyerGameAcc.game_user,
                 password2 = buyerGameAcc.game_pass,
                 giftDiamond = item.diamond_amount
-            });
+            };
+            var res = await http.PostAsJsonAsync(agApiUrl+"/zs/diamond/giftDiamond", reqObj);
 
             var obj = await res.Content.ReadFromJsonAsync<GiftDiamondResponse>();
+            LogManager.Info("请求ag接口[giftDiamond],入参:"+ reqObj+",出参:"+ await res.Content.ReadAsStringAsync());
             if (obj == null || obj.code != 200)
                 return false;
 

@@ -30,7 +30,9 @@
                     <div class="user-details">
                         <h2 class="user-name">{{ nickname }}</h2>
                         <p class="user-id">{{ login_name }}</p>
+
                     </div>
+                    <button class="btn-action-login" v-on:click="loginout">退出登录</button>
                 </div>
             </div>
 
@@ -42,7 +44,7 @@
                     <div class="balance-actions">
                         <button class="btn-action" v-on:click="openRecharge" >充值</button>
                         <button class="btn-action" v-on:click="openWithdraw"  v-if="user_type==0">提现</button>
-                        <button class="btn-action" v-on:click="openAdminWithdraw" v-if="user_type==1">提现处理</button>
+                        <button class="btn-action" v-on:click="openAdminWithdraw" v-if="user_type==1" style="display:none">提现处理</button>
                     </div>
                     <div class="balance-record">
                         <a href="records.html">查看充提记录</a>
@@ -344,6 +346,11 @@
 
         vm.openAdminWithdraw = function () {
             window.location.href = "admin-withdraw.html"
+        }
+
+        vm.loginout = function () {
+            localStorage.setItem("token", "");
+            window.location.href = "login.html"
         }
         vm.openRecharge = function () {
             window.location.href = "recharge.html"

@@ -1,5 +1,6 @@
-using DiamondMarket.Data;
+ï»¿using DiamondMarket.Data;
 using DiamondMarket.Tasks;
+using DiamondMarket.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,12 +19,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(o => { o.JsonSerializerOptions.PropertyNamingPolicy = null; });
 
-// ×¢²á HttpClient
+// æ³¨å†Œ HttpClient
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<RecyclingTaskWorker>();
 builder.Services.AddHostedService<UsdtWatcher>();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<LoggingFilter>(); // å…¨å±€æ‹¦æˆª
+});
 
-// ====== JWT ÈÏÖ¤ÅäÖÃ ======
+
+// ====== JWT è®¤è¯é…ç½® ======
 var jwtConfig = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtConfig["Key"]);
 
@@ -58,7 +64,7 @@ var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseStaticFiles();
 
-// ===== ÆôÓÃ JWT ¼øÈ¨ÖĞ¼ä¼ş =====
+// ===== å¯ç”¨ JWT é‰´æƒä¸­é—´ä»¶ =====
 app.UseAuthentication();
 app.UseAuthorization();
 

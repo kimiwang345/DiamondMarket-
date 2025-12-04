@@ -129,6 +129,11 @@ body.light-theme .btn-action {
   color: #1a1a1a;
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
+body.light-theme .btn-action-login {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
 
 body.light-theme .btn-buy {
   background: rgba(212, 175, 55, 0.15);
@@ -597,6 +602,8 @@ body.light-theme .logo-section {
   -webkit-tap-highlight-color: transparent;
 }
 
+
+
 .btn-primary {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
   color: #ffffff;
@@ -636,6 +643,26 @@ body.light-theme .logo-section {
 }
 
 .btn-action:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-action-login {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.8rem;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-action-login {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-action-login:active {
   background: rgba(255, 255, 255, 0.15);
 }
 
