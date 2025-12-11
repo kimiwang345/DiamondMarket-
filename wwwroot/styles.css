@@ -170,14 +170,15 @@ body.light-theme .tab-btn.active::after {
   background: linear-gradient(90deg, #d4af37, #f4d03f);
 }
 
-body.light-theme .record-item,
-body.light-theme .order-summary,
-body.light-theme .service-item,
-body.light-theme .payment-method,
-body.light-theme .quick-question-btn {
-  background: rgba(245, 245, 245, 0.5);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
+    body.light-theme .record-item,
+    body.light-theme .admin-record-item,
+    body.light-theme .order-summary,
+    body.light-theme .service-item,
+    body.light-theme .payment-method,
+    body.light-theme .quick-question-btn {
+        background: rgba(245, 245, 245, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
 
 body.light-theme .modal {
   background: rgba(0, 0, 0, 0.6);
@@ -1262,6 +1263,25 @@ body.light-theme .logo-section {
   border-radius: 0.75rem;
 }
 
+.admin-record-item {
+    margin-top: 5px;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(20, 20, 30, 0.5);
+    border-radius: 0.75rem;
+}
+
+.admin-record-item-body {
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
 .record-info {
   flex: 1;
   min-width: 0;
@@ -1308,7 +1328,7 @@ body.light-theme .logo-section {
 }
 
 .service-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .service-btn {

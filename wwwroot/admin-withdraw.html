@@ -71,9 +71,14 @@
                             <span class="info-value">{{ getChannel(item.pay_channel) }}</span>
                         </div>
                         <div class="info-row">
+                            <span class="info-label">用户名</span>
+                            <span class="info-value">{{item.nickname}}</span>
+                        </div>
+                        <div class="info-row">
                             <span class="info-label">收款人</span>
                             <span class="info-value">{{item.name}}</span>
                         </div>
+
                         <div class="info-row" v-if="item.pay_info!=''&&(item.pay_channel=='CARD'||item.pay_channel=='USDT')">
                             <span class="info-label" v-if="item.pay_channel=='CARD'">卡号</span>
                             <span class="info-label" v-if="item.pay_channel=='USDT'">USDT地址</span>
@@ -158,7 +163,17 @@
                 withdrawLogs: [],
                 status: -1,
                 rejectReason:"",
-                rejectId:0,
+                rejectId: 0,
+
+                // ===== 分页 =====
+                pageIndex: 1,
+                pageSize: 10,
+                total: 0,
+                totalPages: 1,
+
+                // ===== 自动加载控制 =====
+                isLoading: false,
+                finished: false
             },
 
             methods: {
@@ -191,16 +206,40 @@
         });
 
         // 加载数据
-        async function loadData() {
-            // 加载购买记录*/
-            const p = await api(`/api/finance/adminWithdrawLogs/${vm.status}`, "POST");
-            if (!p) {
-                return;
+        async function loadData(append = false) {
+            if (vm.isLoading) return;
+            vm.isLoading = true;
+            try {
+                const p = await api("/api/finance/adminWithdrawLogs", "POST", {
+                    status: vm.status,
+                    pageIndex: vm.pageIndex,
+                    pageSize: vm.pageSize
+                });
+
+                if (p) {
+                    if (append) {
+                        // 追加到列表末尾
+                        vm.withdrawLogs = vm.withdrawLogs.concat(p.data || []);
+                    } else {
+                        // 首次加载 / 切换状态
+                        vm.withdrawLogs = p.data || [];
+                    }
+
+                    vm.total = p.total || 0;
+                    vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                    // 如果已经到最后一页
+                    vm.finished = vm.pageIndex >= vm.totalPages;
+                }
+
+                vm.isLoading = false;
+                vm.$forceUpdate();
+            } finally {
+                vm.isLoading = false;
             }
-            vm.withdrawLogs = p.data;
-            vm.$forceUpdate();
         }
-        loadData();
+
+        loadData(false);
 
         // 筛选状态
         function filterByStatus(status, btn) {
@@ -218,9 +257,12 @@
                 }
             });
             vm.status = status;
+            vm.pageIndex = 1;
+            vm.finished = false;
             vm.$forceUpdate();
-            loadData();
+            loadData(false);
         }
+
 
         // 查看图片
         function viewImage(src) {
@@ -257,7 +299,7 @@
                 if (!res) return;
                 showToast('提现正在处理中,请尽快完成付款');
 
-                loadData();
+                loadData(false);
             }
         }
 
@@ -268,7 +310,7 @@
                 if (!res) return;
                 showToast('提现已完成');
 
-                loadData();
+                loadData(false);
             }
         }
 
@@ -293,7 +335,7 @@
             if (!res) return;
             showToast('提现已拒绝');
             vm.rejectModal = false;
-            loadData();
+            loadData(false);
             
         }
 
@@ -306,6 +348,22 @@
                 toast.classList.remove('show');
             }, 2000);
         }
+
+        // 滚动监听 - 自动下一页
+        window.addEventListener('scroll', () => {
+            if (vm.isLoading || vm.finished) return;
+
+            const scrollTop = window.scrollY;
+            const clientHeight = window.innerHeight;
+            const scrollHeight = document.body.scrollHeight;
+
+            // 距底部 < 150 像素时加载下一页
+            if (scrollTop + clientHeight >= scrollHeight - 150) {
+                vm.pageIndex++;
+                loadData(true); // 追加加载
+            }
+        });
+
     </script>
 </body>
 </html>

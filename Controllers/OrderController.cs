@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using static DiamondMarket.Controllers.DiamondController;
 using static DiamondMarket.Data.Common;
 using static System.Net.WebRequestMethods;
 
@@ -62,7 +63,7 @@ namespace DiamondMarket.Controllers
                     await tx.RollbackAsync();
                     return Ok(new { code = 101, msg = "购买失败", data = req });
                 }
-
+                await _db.SaveChangesAsync();
                 await tx.CommitAsync();
                 return Ok(new { code = 0, msg = "购买成功", data = req });
             }
@@ -80,24 +81,42 @@ namespace DiamondMarket.Controllers
 
         // 查询我购买的
         [HttpPost("my-purchased")]
-        public async Task<IActionResult> queryMyPurchased()
+        public async Task<IActionResult> queryMyPurchased([FromBody] QueryPageRequest request)
         {
             var claim = User.FindFirst("user_id");
             if (claim == null)
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
 
             var userId = long.Parse(claim.Value);
-            List<OrderDiamondView> orders = await _db.order_diamond_view
-                .Where(o => o.buyer_id == userId)
+            var query = _db.order_diamond_view.AsQueryable();
+
+            // 状态过滤
+            query = query.Where(x => x.buyer_id == userId);
+
+            // 总数
+            var total = await query.CountAsync();
+
+            // 分页
+            var list = await query
                 .OrderByDescending(o => o.create_time)
+                .Skip((request.pageIndex - 1) * request.pageSize)
+                .Take(request.pageSize)
                 .ToListAsync();
 
-            return Ok(new { code = 0, msg = "ok", data = orders });
+            return Ok(new
+            {
+                code = 0,
+                msg = "ok",
+                data = list,
+                total = total,
+                page = request.pageIndex,
+                pageSize = request.pageSize
+            });
         }
 
         // 查询我卖出的
         [HttpPost("my-sold")]
-        public async Task<IActionResult> queryMySold()
+        public async Task<IActionResult> queryMySold([FromBody] QueryPageRequest request)
         {
             var claim = User.FindFirst("user_id");
             if (claim == null)
@@ -105,12 +124,30 @@ namespace DiamondMarket.Controllers
 
             var userId = long.Parse(claim.Value);
 
-            var orders = await _db.order_diamond_view
-                .Where(o => o.seller_id == userId)
+            var query = _db.order_diamond_view.AsQueryable();
+
+            // 状态过滤
+            query = query.Where(x => x.seller_id == userId);
+
+            // 总数
+            var total = await query.CountAsync();
+
+            // 分页
+            var list = await query
                 .OrderByDescending(o => o.create_time)
+                .Skip((request.pageIndex - 1) * request.pageSize)
+                .Take(request.pageSize)
                 .ToListAsync();
 
-            return Ok(new { code = 0, msg = "ok", data = orders });
+            return Ok(new
+            {
+                code = 0,
+                msg = "ok",
+                data = list,
+                total = total,
+                page = request.pageIndex,
+                pageSize = request.pageSize
+            });
         }
     }
 }

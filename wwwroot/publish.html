@@ -66,12 +66,12 @@
                 <div class="publish-form">
 
                     <!--<div class="form-group">
-                <label class="form-label">游戏类型</label>
-                <select class="form-input" v-model="sell.gameType" required>
-                    <option value="">请选择游戏类型</option>
-                    <option value="AGPoker">AGPoker</option>
-                </select>
-            </div>-->
+                        <label class="form-label">游戏类型</label>
+                        <select class="form-input" v-model="sell.gameType" required>
+                            <option value="">请选择游戏类型</option>
+                            <option value="AGPoker">AGPoker</option>
+                        </select>
+                    </div>-->
 
                     <div class="form-group">
                         <label class="form-label">游戏账号</label>
@@ -128,7 +128,7 @@
                     <h3 class="tips-title">发布须知</h3>
                     <ul class="tips-list">
                         <li>发布商品后，需等待买家购买，<span style="color:red">确保期间游戏内钻石数量充足，否则交易将会失败。</span></li>
-                        <li>交易完成后，款项将自动转入您的平台余额,平台会收取2%的交易手续费</li>
+                        <li>交易完成后，款项将自动转入您的平台余额,平台会收取5%的交易手续费</li>
                         <li>请确保填写的信息准确无误</li>
                     </ul>
                 </div>
@@ -238,7 +238,7 @@
 
     <!-- ============ 公共工具 + 业务逻辑 ============ -->
     <script>
-       
+
 
         // 初始化 tinyVue（确保 DOM 已就绪）
         (function init() {
@@ -249,13 +249,13 @@
                         mode: "sell",
                         recyclingTasks: {
                             id: 0,
-                            game_type:'AGPoker',
-                            game_user:'',
-                            game_pass:'',
-                            request_diamond:0,
-                            min_unit_price:0,
-                            max_unit_price:0,
-                            status:-1,
+                            game_type: 'AGPoker',
+                            game_user: '',
+                            game_pass: '',
+                            request_diamond: 0,
+                            min_unit_price: 0,
+                            max_unit_price: 0,
+                            status: -1,
                         },
                         sell: {
                             gameType: "AGPoker",
@@ -335,7 +335,7 @@
                             alert("回收任务已停止！");
                             loadData();
                         },
-                        
+
                     }
                 });
 
@@ -363,10 +363,10 @@
                 vm.recyclingTasks = p.data;
             } else {
                 vm.recyclingTasks = {
-                    id:0,
-                    status:-1,
+                    id: 0,
+                    status: -1,
                 }
-            } 
+            }
             vm.$forceUpdate();
         }
         async function loadData2() {
@@ -384,5 +384,28 @@
         loadData2();
     </script>
 
+    <script>
+        (function () {
+            // 埋点接口
+            const url = "/api/stat/page-view";
+            const token = localStorage.getItem("token");
+            // 页面数据
+            const data = {
+                page: "发布页面",
+                referrer: document.referrer,
+                ua: navigator.userAgent,
+                ts: Date.now()
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                },
+                body: data ? JSON.stringify(data) : null
+            });
+        })();
+    </script>
 </body>
 </html>

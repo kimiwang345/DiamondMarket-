@@ -2,6 +2,7 @@
 {
     using DiamondMarket.Data;
     using DiamondMarket.Models;
+    using DiamondMarket.Utils;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
@@ -54,91 +55,95 @@
 
         private async Task CheckUSDT()
         {
-            string tronAddress = _config["Config:usdtPayUrl"];
-            if (string.IsNullOrEmpty(tronAddress))
+            try
             {
-                return ;
-            }                              
-            // 当前时间
-            //DateTime nowBeijing = DateTime.Now;
-            DateTime nowBeijing = DateTime.Parse("2025-07-11 19:26:42");
-
-            // 查询最近5分钟（你的充值回调需求）
-            long start = ToUtcMs(nowBeijing.AddMinutes(-5));
-            long end = ToUtcMs(nowBeijing);
-
-            string url = $"https://apilist.tronscan.org/api/filter/trc20/transfers" +
-                         $"?limit=20&start=0&sort=-timestamp&count=true&filterTokenValue=0" +
-                         $"&start_timestamp={start}&end_timestamp={end}&relatedAddress={tronAddress}";
-
-
-            // 发起请求
-            using var http = new HttpClient();
-            var result = await http.GetStringAsync(url);
-
-            var json = JObject.Parse(result);
-
-            var list = json["token_transfers"] as JArray;
-            if (list == null || list.Count == 0)
-            {
-                _logger.LogInformation("⏳ 未检测到USDT入账");
-                return;
-            }
-            _logger.LogInformation("🟢 检测到 {0} 条链上充值交易", list.Count);
-
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            foreach (var tx in list)
-            {
-                long amount = tx["quant"].ToObject<long>();
-                long chainTimeUnix = tx["block_ts"].ToObject<long>();
-
-                // 区块时间(Timestamp秒)转 DateTime
-                DateTime chainTime = UnixTimestampToDateTime(chainTimeUnix);
-
-                DateTime startTime = chainTime.AddMinutes(-5);  // 区块前5分钟
-                DateTime endTime = chainTime.AddMinutes(0);     // 防止延迟多 预留1分钟也可写 chainTime
-
-                // ========== 查询匹配订单 ==========
-                var order = await db.recharge_log.Where(o =>
-                    o.pay_amount*1000000 == amount &&
-                    o.status == 0 &&                           // 未支付
-                    o.pay_channel == "usdt" &&                           // 未支付
-                    o.create_time >= startTime &&
-                    o.create_time <= endTime
-                ).OrderByDescending(o => o.create_time)
-                .FirstAsync();
-                if (order==null)
+                string tronAddress = _config["Config:usdtPayUrl"];
+                if (string.IsNullOrEmpty(tronAddress))
                 {
-                    continue;
+                    return;
                 }
-                // ========= 🔥 写入数据库/充值到账 =========
-                order.status = 1;
+                // 当前时间
+                DateTime nowBeijing = DateTime.Now;
 
-                // ========== 加余额举例 ==============
-                var user = db.user_info.FirstOrDefault(u => u.id == order.user_id);
+                // 查询最近5分钟（你的充值回调需求）
+                long start = ToUtcMs(nowBeijing.AddMinutes(-50));
+                long end = ToUtcMs(nowBeijing);
 
-                if (user != null)
+                string url = $"https://usdt.tokenview.io/api/usdt/addresstxlist/" + tronAddress + "/1/50";
+
+
+                // 发起请求
+                using var http = new HttpClient();
+                var result = await http.GetStringAsync(url);
+
+                var json = JObject.Parse(result);
+
+                var list = json["data"]["txs"] as JArray;
+                if (list == null || list.Count == 0)
                 {
-                    var buyerAfter = user.amount + order.amount;
 
-                    var balanceLog = new UserBalanceLog
+                    LogManager.Info("未检测到USDT入账");
+                    return;
+                }
+                LogManager.Info("🟢 检测到 {0} 条链上充值交易", list.Count);
+
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                foreach (var tx in list)
+                {
+                    long amount = tx["value"].ToObject<long>();
+                    long chainTimeUnix = tx["time"].ToObject<long>();
+
+                    // 区块时间(Timestamp秒)转 DateTime
+                    DateTime chainTime = UnixTimestampToDateTime(chainTimeUnix);
+
+                    DateTime startTime = chainTime.AddMinutes(-5);  // 区块前5分钟
+                    DateTime endTime = chainTime.AddMinutes(0);     // 防止延迟多 预留1分钟也可写 chainTime
+
+                    // ========== 查询匹配订单 ==========
+                    var order = await db.recharge_log.Where(o =>
+                        o.pay_amount * 1000000 == amount &&
+                        o.status == 0 &&                           // 未支付
+                        o.pay_channel == "usdt" &&                           // 未支付
+                        o.create_time >= startTime &&
+                        o.create_time <= endTime
+                    ).OrderByDescending(o => o.create_time)
+                    .FirstOrDefaultAsync();
+                    if (order == null)
                     {
-                        user_id = user.id,
-                        amount = order.amount,
-                        before_amount = user.amount,
-                        after_amount = buyerAfter,
+                        continue;
+                    }
+                    // ========= 🔥 写入数据库/充值到账 =========
+                    order.status = 1;
+                    LogManager.Info("处理订单"+order.order_no);
+                    // ========== 加余额举例 ==============
+                    var user = db.user_info.FirstOrDefault(u => u.id == order.user_id);
 
-                        type = 1,  // 购买扣款
-                        remark = $"充值{order.order_no}",
-                        create_time = DateTime.Now
-                    };
-                    user.amount += order.amount;
-                    db.user_balance_log.Add(balanceLog);
+                    if (user != null)
+                    {
+                        var buyerAfter = user.amount + order.amount;
+
+                        var balanceLog = new UserBalanceLog
+                        {
+                            user_id = user.id,
+                            amount = order.amount,
+                            before_amount = user.amount,
+                            after_amount = buyerAfter,
+
+                            type = 1,  // 购买扣款
+                            remark = $"充值{order.order_no}",
+                            create_time = DateTime.Now
+                        };
+                        user.amount += order.amount;
+                        db.user_balance_log.Add(balanceLog);
+                    }
+
+                    await db.SaveChangesAsync();
                 }
-
-                await db.SaveChangesAsync();
+            }
+            catch (Exception e) {
+                LogManager.Info("充值交易处理报错"+ e.Message);
             }
         }
         // 北京时间 → UTC毫秒时间戳
@@ -148,7 +153,7 @@
         }
         public static DateTime UnixTimestampToDateTime(long timestampMillis)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(timestampMillis).LocalDateTime;
+            return DateTimeOffset.FromUnixTimeSeconds(timestampMillis).LocalDateTime;
         }
 
     }

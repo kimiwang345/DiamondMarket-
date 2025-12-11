@@ -1,12 +1,9 @@
 ﻿using DiamondMarket.Data;
-using DiamondMarket.Data;
-using DiamondMarket.Models;
 using DiamondMarket.Models;
 using DiamondMarket.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using static DiamondMarket.Data.Common;
 
 namespace DiamondMarket.Controllers
@@ -63,20 +60,44 @@ namespace DiamondMarket.Controllers
             return Ok(new { code = 0, msg = "ok", unit_price, total_count, diamond_amount });
         }
 
+        public class QueryPageRequest
+        {
+            public int pageIndex { get; set; }
+            public int pageSize { get; set; }
+        }
         // 列出在售商品
         [HttpPost("my-selling")]
-        public async Task<IActionResult> GetMySaleingList()
+        public async Task<IActionResult> GetMySaleingList([FromBody] QueryPageRequest request)
         {
             var claim = User.FindFirst("user_id");
             if (claim == null)
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
             var userId = long.Parse(claim.Value);
-            var list = await _db.diamond_sale_item
-                .Where(x => x.status == 1 && x.seller_id== userId)
-                .OrderByDescending(x => x.create_time)
+
+            var query = _db.diamond_sale_item.AsQueryable();
+
+            // 状态过滤
+            query = query.Where(x => x.status == 1 && x.seller_id == userId);
+
+            // 总数
+            var total = await query.CountAsync();
+
+            // 分页
+            var list = await query
+                .OrderByDescending(o => o.create_time)
+                .Skip((request.pageIndex - 1) * request.pageSize)
+                .Take(request.pageSize)
                 .ToListAsync();
 
-            return Ok(new { code = 0, msg = "ok", data = list });
+            return Ok(new
+            {
+                code = 0,
+                msg = "ok",
+                data = list,
+                total = total,
+                page = request.pageIndex,
+                pageSize = request.pageSize
+            });
         }
 
 

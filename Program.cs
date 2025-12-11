@@ -1,9 +1,11 @@
-﻿using DiamondMarket.Data;
+﻿using DiamondMarket.Attributes;
+using DiamondMarket.Data;
 using DiamondMarket.Tasks;
 using DiamondMarket.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +28,13 @@ builder.Services.AddHostedService<UsdtWatcher>();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<LoggingFilter>(); // 全局拦截
+});
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var config = builder.Configuration.GetConnectionString("Redis") ??
+                 builder.Configuration["Redis:ConnectionString"];
+    return ConnectionMultiplexer.Connect(config);
 });
 
 
@@ -61,6 +70,7 @@ builder.Services.AddCors(o =>
 
 var app = builder.Build();
 
+
 app.UseCors("AllowAll");
 app.UseStaticFiles();
 
@@ -69,5 +79,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseMiddleware<VisitStatMiddleware>();
 
 app.Run();

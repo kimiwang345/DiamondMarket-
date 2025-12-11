@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 - GameTrade</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/chat-styles.css">
 </head>
 
 <body>
@@ -42,8 +43,10 @@
                     <div class="balance-label">账户余额</div>
                     <div class="balance-amount">¥ {{ amount }}</div>
                     <div class="balance-actions">
-                        <button class="btn-action" v-on:click="openRecharge" >充值</button>
-                        <button class="btn-action" v-on:click="openWithdraw"  v-if="user_type==0">提现</button>
+                        <button class="btn-action" v-on:click="openRecharge" v-if="user_type==0">充值</button>
+                        <button class="btn-action" v-on:click="openRecharge" v-if="user_type==2">充值</button>
+                        <button class="btn-action" v-on:click="openAdminRecharge" v-if="user_type==1" style="display:none">充值处理</button>
+                        <button class="btn-action" v-on:click="openWithdraw" v-if="user_type==0">提现</button>
                         <button class="btn-action" v-on:click="openAdminWithdraw" v-if="user_type==1" style="display:none">提现处理</button>
                     </div>
                     <div class="balance-record">
@@ -51,7 +54,52 @@
                     </div>
                 </div>
             </div>
+            <!-- 添加在线客服按钮 -->
+            <div class="service-section">
+                <button class="service-btn service-btn-relative" v-on:click="openCustomerService">
 
+                    <span class="service-icon">💬</span>
+                    <!-- 🔥 未读小红点 -->
+                    <div class="service-badge" v-if="unreadChatCount > 0">
+                        {{ unreadChatCount }}
+                    </div>
+                    <div class="service-content">
+                        <div class="service-title">
+                            在线客服
+                        </div>
+                        <div class="service-desc">有问题？联系客服获取帮助</div>
+                    </div>
+                    <span class="service-arrow">→</span>
+                </button>
+            </div>
+            <!-- 添加访问报表按钮 -->
+            <div class="service-section" v-if="user_type==1">
+                <button class="service-btn service-btn-relative" v-on:click="openAdminReport">
+
+                    <span class="service-icon">💎</span>
+                    <div class="service-content">
+                        <div class="service-title">
+                            访问报表
+                        </div>
+                        <div class="service-desc">访问报表，PV/UV</div>
+                    </div>
+                    <span class="service-arrow">→</span>
+                </button>
+            </div>
+            <!-- 添加统计报表按钮 -->
+            <div class="service-section" v-if="user_type==1">
+                <button class="service-btn service-btn-relative" v-on:click="openAdminTradeReport">
+
+                    <span class="service-icon">💰</span>
+                    <div class="service-content">
+                        <div class="service-title">
+                            统计报表
+                        </div>
+                        <div class="service-desc">统计报表,钻石交易、充提现统计</div>
+                    </div>
+                    <span class="service-arrow">→</span>
+                </button>
+            </div>
             <!-- Tabs -->
             <div class="tabs-container">
                 <div class="tabs">
@@ -192,7 +240,7 @@
                         <select class="form-input" v-model="withdrawForm.pay_channel">
                             <option value="ZFB">支付宝</option>
                             <option value="WX">微信</option>
-                            <option value="CARD">银行卡</option>
+                            <!--<option value="CARD">银行卡</option>-->
                             <option value="USDT">USDT</option>
                         </select>
                     </div>
@@ -203,7 +251,7 @@
                         </div>
                     </div>
                     <!-- 收款二维码上传区域 -->
-                    <div class="form-group" id="qrcodeUploadSection"  v-if="withdrawForm.pay_channel=='WX'||withdrawForm.pay_channel=='ZFB'">
+                    <div class="form-group" id="qrcodeUploadSection" v-if="withdrawForm.pay_channel=='WX'||withdrawForm.pay_channel=='ZFB'">
                         <label class="form-label">上传收款码</label>
                         <div class="qr-upload" id="uploadArea" onclick="document.getElementById('qrcodeFile').click()">
                             <input type="file" id="qrcodeFile" accept="image/*" style="display: none; " v-model="withdrawForm.pay_url">
@@ -224,13 +272,75 @@
                         </div>
                     </div>
                     <div class="withdraw-note">
-                        提现将在1-3个工作日内到账，手续费为提现金额的1%
+                        提现将在1-3个工作日内到账
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" v-on:click="withdrawModal=false">取消</button>
                     <button class="btn-primary" v-on:click="confirmWithdraw">确认提现</button>
                 </div>
+            </div>
+        </div>
+
+
+        <!-- 添加客服弹窗 -->
+        <div id="customerServiceModal" class="chat-modal" v-if="customerServiceShow">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <div class="chat-avatar online">
+                            <span>客</span>
+                            <span class="online-dot"></span>
+                        </div>
+                        <div class="chat-header-text">
+                            <h3>在线客服</h3>
+                            <span class="chat-status">在线</span>
+                        </div>
+                    </div>
+                    <button class="chat-close-btn" v-on:click="closeChat">✕</button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                </div>
+
+                <!-- 快捷问题 -->
+                <div class="quick-replies">
+                    <button class="quick-reply-btn" onclick="sendQuickReply('如何发布商品？')">如何发布商品？</button>
+                    <button class="quick-reply-btn" v-on:click="sendQuickReply('如何充值？')">如何充值？</button>
+                    <button class="quick-reply-btn" v-on:click="sendQuickReply('交易安全吗？')">交易安全吗？</button>
+                    <button class="quick-reply-btn" v-on:click="sendQuickReply('手续费是多少？')">手续费是多少？</button>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <button class="chat-attachment-btn" v-on:click="selectImage()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </button>
+
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+
+                        <input type="text" class="chat-input" id="chatInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+
+                        <button class="chat-send-btn" v-on:click="sendMessage()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加图片预览弹窗 -->
+        <div id="imagePreviewModal" class="image-preview-modal" onclick="closeImagePreview()">
+            <div class="image-preview-container">
+                <img id="previewImage" src="/placeholder.svg" alt="预览图片">
+                <button class="image-preview-close">✕</button>
             </div>
         </div>
         <!-- 底部导航 -->
@@ -258,10 +368,13 @@
         const vm = tinyVue({
             el: "#app",
             data: {
+                unreadChatCount: 0,
                 withdrawModal: false,
+                customerServiceShow: false,
                 nickname: "",
                 login_name: "",
-                user_type:0,
+                user_type: 0,
+                user_id: 0,
                 amount: 0,
                 tab: "selling",
                 selling: [],
@@ -276,61 +389,175 @@
                     pay_info: '',
                     name: '',
                 },
+
+                // ===== 分页 =====
+                pageIndex: 1,
+                pageSize: 10,
+                total: 0,
+                totalPages: 1,
+
+                // ===== 自动加载控制 =====
+                isLoading: false,
+                finished: false
             }
         });
 
         // 加载数据
-        async function loadData() {
-            const [user, s] = await Promise.all([
-                api("/api/user/queryUser"),
-                api("/api/diamond/my-selling"),
-                
-            ]);
+        async function loadUserData() {
+            const user = await api("/api/user/queryUser");
 
             vm.nickname = user.data.nickname;
             vm.login_name = user.data.login_name;
             vm.user_type = user.data.user_type;
+            vm.user_id = user.data.id;
             vm.amount = user.data.amount;
-            vm.selling = s.data;
+            loadData(false);
+            vm.$forceUpdate();
+        }
+        async function loadData(append = false) {
+            var t = vm.tab;
+            if (t == 'selling') {
+                if (vm.isLoading) return;
+                vm.isLoading = true;
+                try {
+                    const p = await api("/api/diamond/my-selling", "POST", {
+                        pageIndex: vm.pageIndex,
+                        pageSize: vm.pageSize
+                    });
 
+                    if (p) {
+                        if (append) {
+                            // 追加到列表末尾
+                            vm.selling = vm.selling.concat(p.data || []);
+                        } else {
+                            // 首次加载 / 切换状态
+                            vm.selling = p.data || [];
+                        }
+
+                        vm.total = p.total || 0;
+                        vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                        // 如果已经到最后一页
+                        vm.finished = vm.pageIndex >= vm.totalPages;
+                    }
+
+                    vm.isLoading = false;
+                    vm.$forceUpdate();
+                } finally {
+                    vm.isLoading = false;
+                }
+            }
+            if (t == 'purchased') {
+                if (vm.isLoading) return;
+                vm.isLoading = true;
+                try {
+                    const p = await api("/api/order/my-purchased", "POST", {
+                        pageIndex: vm.pageIndex,
+                        pageSize: vm.pageSize
+                    });
+
+                    if (p) {
+                        if (append) {
+                            // 追加到列表末尾
+                            vm.purchased = vm.purchased.concat(p.data || []);
+                        } else {
+                            // 首次加载 / 切换状态
+                            vm.purchased = p.data || [];
+                        }
+
+                        vm.total = p.total || 0;
+                        vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                        // 如果已经到最后一页
+                        vm.finished = vm.pageIndex >= vm.totalPages;
+                    }
+
+                    vm.isLoading = false;
+                    vm.$forceUpdate();
+                } finally {
+                    vm.isLoading = false;
+                }
+            }
+            if (t == 'sold') {
+                if (vm.isLoading) return;
+                vm.isLoading = true;
+                try {
+                    const p = await api("/api/order/my-sold", "POST", {
+                        pageIndex: vm.pageIndex,
+                        pageSize: vm.pageSize
+                    });
+
+                    if (p) {
+                        if (append) {
+                            // 追加到列表末尾
+                            vm.sold = vm.sold.concat(p.data || []);
+                        } else {
+                            // 首次加载 / 切换状态
+                            vm.sold = p.data || [];
+                        }
+
+                        vm.total = p.total || 0;
+                        vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                        // 如果已经到最后一页
+                        vm.finished = vm.pageIndex >= vm.totalPages;
+                    }
+
+                    vm.isLoading = false;
+                    vm.$forceUpdate();
+                } finally {
+                    vm.isLoading = false;
+                }
+            }
+            if (t == 'amount') {
+                if (vm.isLoading) return;
+                vm.isLoading = true;
+                try {
+                    const p = await api("/api/user/balance-log", "POST", {
+                        pageIndex: vm.pageIndex,
+                        pageSize: vm.pageSize
+                    });
+
+                    if (p) {
+                        if (append) {
+                            // 追加到列表末尾
+                            vm.balanceLogs = vm.balanceLogs.concat(p.data || []);
+                        } else {
+                            // 首次加载 / 切换状态
+                            vm.balanceLogs = p.data || [];
+                        }
+
+                        vm.total = p.total || 0;
+                        vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                        // 如果已经到最后一页
+                        vm.finished = vm.pageIndex >= vm.totalPages;
+                    }
+
+                    vm.isLoading = false;
+                    vm.$forceUpdate();
+                } finally {
+                    vm.isLoading = false;
+                }
+            }
             vm.$forceUpdate();
         }
 
-        
         async function switchTab(t) {
             vm.tab = t;
-            if (t =='selling') {
-                const s = await api("/api/diamond/my-selling");
-                if(s&&s.data)
-                    vm.selling = s.data;
-            }
-            if (t =='purchased') {
-                const s = await api("/api/order/my-purchased");
-                if(s&&s.data)
-                    vm.purchased = s.data;
-            }
-            if (t =='sold') {
-                const s = await api("/api/order/my-sold");
-                if(s&&s.data)
-                    vm.sold = s.data;
-            }
-            if (t =='amount') {
-                const s = await api("/api/user/balance-log");
-                if(s&&s.data)
-                    vm.balanceLogs = s.data;
-            }
+            vm.pageIndex = 1;
+            vm.finished = false;
+            vm.$forceUpdate();
+            loadData(false);
             vm.$forceUpdate();
         };
 
         vm.offSale = async function offSale(id) {
             if (!confirm("确认下架？")) return;
             await api(`/api/diamond/off-sale/${id}`, "POST");
-            loadData();
+            loadData(false);
         };
 
-        vm.openRecharge = function () {
-            alert("功能正在开发中");
-        };
 
         vm.openWithdraw = function () {
 
@@ -343,6 +570,41 @@
             };
             vm.withdrawModal = true;
         };
+        vm.openCustomerService = async function () {
+            if (vm.user_type == 1) {
+                //客服
+                window.location.href = "admin-chat.html"
+                return;
+            }
+            else {
+                vm.customerServiceShow = true;
+                vm.unreadChatCount = 0;
+                isChatOpen = true;
+
+                await api("/api/chat/read-all", "POST", {});   // 标记已读
+
+                document.getElementById("chatMessages").innerHTML = "";
+
+                chatMaxId = Number.MAX_SAFE_INTEGER;
+                latestId = 0;
+
+                await loadHistoryFrist();
+
+                startPolling();
+            }
+
+        }
+        vm.openAdminReport = function () {
+            window.location.href = "admin-stats.html"
+        }
+        vm.openAdminTradeReport = function () {
+            window.location.href = "admin-trade-stats.html"
+        }
+        vm.closeChat = function () {
+            vm.customerServiceShow = false;
+            isChatOpen = false;
+            clearInterval(timer);
+        }
 
         vm.openAdminWithdraw = function () {
             window.location.href = "admin-withdraw.html"
@@ -351,6 +613,9 @@
         vm.loginout = function () {
             localStorage.setItem("token", "");
             window.location.href = "login.html"
+        }
+        vm.openAdminRecharge = function () {
+            window.location.href = "admin-recharge.html"
         }
         vm.openRecharge = function () {
             window.location.href = "recharge.html"
@@ -376,12 +641,12 @@
                 return;
             }
 
-            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "CARD" )) {
+            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "CARD")) {
                 alert("请输入卡号");
                 return;
             }
 
-            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "USDT" )) {
+            if (!vm.withdrawForm.pay_info && (vm.withdrawForm.pay_channel === "USDT")) {
                 alert("请输入USDT地址");
                 return;
             }
@@ -390,17 +655,300 @@
 
             if (!res) return;
             vm.withdrawModal = false;
-            loadData();
+            loadData(false);
             alert("提现申请已提交,预计1-3个工作日到账！");
         };
 
 
-        loadData();
+        loadUserData();
+
+        let sendMsgRuning = false;
+        async function sendMessage() {
+            if (sendMsgRuning) {
+                return;
+            }
+            sendMsgRuning = true;
+            try {
+                const input = document.getElementById('chatInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                //appendMessage(message, 'sent');
+
+                await api("/api/chat/send", "POST", {
+                    to_id: 0,          // 后端客服 ID
+                    msg_type: 1,
+                    content: message
+                });
+                latestMsg();
+                input.value = '';
+            } catch (e) {
+                sendMsgRuning = false;
+            } finally {
+
+                sendMsgRuning = false;
+            }
+        }
+
+        function appendMessage(content, type, isImage = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ' + type;
+
+            let html = '';
+            if (type === 'received') {
+                html += '<div class="message-avatar">客</div>';
+            }
+            html += '<div class="message-content">';
+            if (isImage) {
+                html += '<div class="message-bubble image-message"><img src="' + content + '" alt="图片" onclick="previewImage(this.src)"></div>';
+            } else {
+                html += '<div class="message-bubble">' + content + '</div>';
+            }
+            html += '<div class="message-time">' + getCurrentTime() + '</div>';
+            html += '</div>';
+
+            wrapper.innerHTML = html;
+            chatMessages.appendChild(wrapper);
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
+
+        }
+
+        function sendQuickReply(text) {
+            appendMessage(text, 'sent');
+
+            // 模拟客服回复
+            setTimeout(() => {
+                let reply = '';
+                if (text.includes('发布商品')) {
+                    reply = '发布商品步骤：\n1. 点击底部"发布"按钮\n2. 选择"出售钻石"\n3. 填写游戏信息和钻石数量\n4. 设置单价后提交即可';
+                } else if (text.includes('充值')) {
+                    reply = '充值步骤：\n1. 进入"我的"页面\n2. 点击"充值"按钮\n3. 输入充值金额\n4. 选择支付方式完成支付';
+                } else if (text.includes('安全')) {
+                    reply = '我们平台采用担保交易模式，资金由平台托管，交易完成后再放款给卖家，确保买卖双方权益。同时我们有7*24小时风控系统保障交易安全。';
+                }
+                appendMessage(reply, 'received');
+            }, 800);
+        }
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 先上传图片
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const upload = await fetch("/api/upload/uploadChatImg", {
+                method: "POST",
+                body: formData
+            }).then(r => r.json());
+
+            const url = upload.url;
+
+            //appendMessage(url, 'sent', true);
+
+            await api("/api/chat/send", "POST", {
+                to_id: 0,
+                msg_type: 2,
+                content: url
+            });
+            latestMsg();
+        }
+
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        function selectImage() {
+            document.getElementById('imageInput').click();
+        }
+
+        let chatMaxId = Number.MAX_SAFE_INTEGER;  // 用于分页：历史记录最旧的 id
+        let latestId = 0;                         // 用于轮询：最新的消息 id
+        let isChatOpen = false;
+
+        async function loadHistoryFrist() {
+            const resp = await api(`/api/chat/records?maxId=${chatMaxId}&limit=20`);
+            const list = resp.data;
+
+            if (list.length === 0) return;
+
+            // 更新 maxId（下次继续加载）
+            chatMaxId = Math.min(...list.map(x => x.id));
+
+            const parent = document.getElementById('chatMessages');
+
+            // 保持滚动位置不跳动
+            const oldScroll = parent.scrollHeight;
+
+            list.forEach(item => {
+                appendMessage(
+                    item.content,
+                    item.from_id === vm.user_id ? "sent" : "received",
+                    item.msg_type === 2
+                );
+
+                latestId = Math.max(latestId, item.id);
+            });
+
+            parent.scrollTop = parent.scrollHeight - oldScroll;
+        }
+        let isLoadingHistory = false;
+
+        async function loadHistory() {
+            if (isLoadingHistory) return; // 阻止重复
+
+            isLoadingHistory = true;
+            try {
+                const resp = await api(`/api/chat/records?maxId=${chatMaxId}&limit=20`);
+                const list = resp.data;
+
+                if (list.length === 0) return;
+
+                chatMaxId = Math.min(...list.map(x => x.id));
+
+                const parent = document.getElementById('chatMessages');
+
+                // 记录滚动位置防止跳动
+                const oldHeight = parent.scrollHeight;
+
+                // ⭐⭐⭐ 按 id 从小到大排序（旧 → 新）
+                list.sort((a, b) => b.id - a.id);
+                // ⭐⭐⭐ 关键：历史消息必须反向插入
+                list.forEach(item => {
+                    insertHistoryMessage(item);
+                    latestId = Math.max(latestId, item.id);
+                });
+
+                // 恢复滚动位置
+                parent.scrollTop = parent.scrollHeight - oldHeight;
+            } finally {
+                isLoadingHistory = false;
+            }
+        }
+        function insertHistoryMessage(item) {
+            const parent = document.getElementById('chatMessages');
+
+            const wrapper = createMessageNode(item);
+
+            // ⭐⭐⭐ 历史记录插入顶部
+            parent.insertBefore(wrapper, parent.firstChild);
+        }
+
+        function createMessageNode(item) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ' + (item.from_id === vm.user_id ? 'sent' : 'received');
+
+            let html = '';
+
+            if (item.from_id !== vm.user_id) {
+                html += '<div class="message-avatar">客</div>';
+            }
+
+            html += '<div class="message-content">';
+
+            if (item.msg_type === 2) {
+                // 图片
+                html += `<div class="message-bubble image-message">
+                        <img src="${item.content}" onclick="previewImage(this.src)">
+                     </div>`;
+            } else {
+                // 文本
+                html += `<div class="message-bubble">${item.content}</div>`;
+            }
+
+            html += `<div class="message-time">${formatTime(item.create_time)}</div>`;
+            html += `</div>`;
+
+            wrapper.innerHTML = html;
+            return wrapper;
+        }
+        function formatTime(t) {
+            const d = new Date(t);
+            return d.getHours().toString().padStart(2, '0')
+                + ":" +
+                d.getMinutes().toString().padStart(2, '0');
+        }
+
+
+        let timer = null;
+
+        function startPolling() {
+            if (timer) clearInterval(timer);
+
+            timer = setInterval(async () => {
+                if (!isChatOpen) return;
+                latestMsg();
+
+
+            }, 2000);
+        }
+        async function latestMsg() {
+            const resp = await api(`/api/chat/latest?afterId=${latestId}`);
+            const list = resp.data;
+
+            list.forEach(item => {
+                appendMessage(
+                    item.content,
+                    item.from_id === vm.user_id ? "sent" : "received",
+                    item.msg_type === 2
+                );
+                latestId = item.id;
+            });
+        }
+
+        loadUnread();
+
+        // 音频对象（全局复用）
+        const newMsgAudio = new Audio("/sounds/msgnotice.mp3");
+        newMsgAudio.volume = 0.6;   // 音量 0 ~ 1
+
+        async function loadUnread() {
+            const resp = await api("/api/chat/unread");
+            vm.unreadChatCount = resp.count;
+            if (vm.unreadChatCount > 0) {
+                //播放音频
+                playNewMsgSound();
+            }
+            vm.$forceUpdate();
+        }
+
+        setInterval(loadUnread, 10000);  // 10秒刷新一次
+        function playNewMsgSound() {
+            // iOS 必须先有用户交互才允许播放
+            newMsgAudio.currentTime = 0;
+            newMsgAudio.play().catch(err => {
+                console.log("音频播放被阻止，需要用户操作一次屏幕才可播放", err);
+            });
+        }
+
     </script>
 
 
     <script>
-        
+        // 预览图片
+        function previewImage(src) { document.getElementById('previewImage').src = src; document.getElementById('imagePreviewModal').classList.add('active'); }
+        // 关闭图片预览
+        function closeImagePreview() { document.getElementById('imagePreviewModal').classList.remove('active'); }
+        document.getElementById("chatMessages").addEventListener("scroll", async function () {
+            if (this.scrollTop < 50) {
+                await loadHistory();
+            }
+        });
+
         // 点击上传
         document.getElementById('qrcodeFile').addEventListener('change', async function () {
             const file = this.files[0];
@@ -434,5 +982,46 @@
         });
     </script>
 
+
+    <script>
+        (function () {
+            // 埋点接口
+            const url = "/api/stat/page-view";
+            const token = localStorage.getItem("token");
+            // 页面数据
+            const data = {
+                page: "我的页面",
+                referrer: document.referrer,
+                ua: navigator.userAgent,
+                ts: Date.now()
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                },
+                body: data ? JSON.stringify(data) : null
+            });
+        })();
+
+
+
+        // 滚动监听 - 自动下一页
+        window.addEventListener('scroll', () => {
+            if (vm.isLoading || vm.finished) return;
+
+            const scrollTop = window.scrollY;
+            const clientHeight = window.innerHeight;
+            const scrollHeight = document.body.scrollHeight;
+
+            // 距底部 < 150 像素时加载下一页
+            if (scrollTop + clientHeight >= scrollHeight - 150) {
+                vm.pageIndex++;
+                loadData(true); // 追加加载
+            }
+        });
+    </script>
 </body>
 </html>

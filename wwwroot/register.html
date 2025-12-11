@@ -145,6 +145,28 @@
         };
     </script>
 
+    <script>
+        (function () {
+            // 埋点接口
+            const url = "/api/stat/page-view";
+            const token = localStorage.getItem("token");
+            // 页面数据
+            const data = {
+                page: "注册页面",
+                referrer: document.referrer,
+                ua: navigator.userAgent,
+                ts: Date.now()
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: data ? JSON.stringify(data) : null
+            });
+        })();
+    </script>
 </body>
 
 </html>

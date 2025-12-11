@@ -1,4 +1,5 @@
-﻿using DiamondMarket.Data;
+﻿using DiamondMarket.Attributes.DiamondMarket.Attributes;
+using DiamondMarket.Data;
 using DiamondMarket.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,7 @@ namespace DiamondMarket.Api.Controllers
             var claims = new[]
             {
                 new Claim("user_id", user.id.ToString()),
+                new Claim("user_type", user.user_type.ToString()),
                 new Claim("login_name", user.login_name)
             };
 
@@ -39,7 +41,7 @@ namespace DiamondMarket.Api.Controllers
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(int.Parse(jwt["ExpiresHours"])),
+                expires: DateTime.Now.AddHours(int.Parse(jwt["ExpiresHours"])),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -47,6 +49,7 @@ namespace DiamondMarket.Api.Controllers
 
         // 登录
         [HttpPost("login")]
+        [RateLimit(5, 5)]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
             var user = await _db.user_info
@@ -54,7 +57,8 @@ namespace DiamondMarket.Api.Controllers
 
             if (user == null)
                 return Unauthorized(new { code = 401, msg = "用户名或密码错误" });
-
+            user.last_login_time = DateTime.Now;
+            await _db.SaveChangesAsync();
             return Ok(new
             {
                 code = 0,
@@ -66,6 +70,7 @@ namespace DiamondMarket.Api.Controllers
 
         // 注册
         [HttpPost("register")]
+        [RateLimit(1, 10)]
         public async Task<IActionResult> Register([FromBody] LoginRequest req)
         {
             if (await _db.user_info.AnyAsync(u => u.login_name == req.login_name))
@@ -79,7 +84,7 @@ namespace DiamondMarket.Api.Controllers
                 amount = 0,
                 freeze_amount = 0,
                 user_type = 0,
-                create_time = DateTime.UtcNow
+                create_time = DateTime.Now
             };
 
             _db.user_info.Add(user);

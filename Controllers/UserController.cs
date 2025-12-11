@@ -1,8 +1,10 @@
-﻿using DiamondMarket.Data;
+﻿using DiamondMarket.Attributes.DiamondMarket.Attributes;
+using DiamondMarket.Data;
 using DiamondMarket.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static DiamondMarket.Controllers.DiamondController;
 
 namespace DiamondMarket.Controllers
 {
@@ -19,6 +21,7 @@ namespace DiamondMarket.Controllers
         }
 
         [HttpPost("queryUser")]
+        [RateLimit(60, 60)]
         public async Task<IActionResult> GetUser()
         {
             var userId = long.Parse(User.FindFirst("user_id")!.Value);
@@ -29,19 +32,38 @@ namespace DiamondMarket.Controllers
         }
 
         [HttpPost("balance-log")]
-        public async Task<IActionResult> balanceLog()
+        public async Task<IActionResult> balanceLog([FromBody] QueryPageRequest request)
         {
             var claim = User.FindFirst("user_id");
             if (claim == null)
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
 
             var userId = long.Parse(claim.Value);
-            List<UserBalanceLog> orders = await _db.user_balance_log
-                .Where(o => o.user_id == userId)
+
+            var query = _db.user_balance_log.AsQueryable();
+
+            // 状态过滤
+            query = query.Where(o => o.user_id == userId);
+
+            // 总数
+            var total = await query.CountAsync();
+
+            // 分页
+            var list = await query
                 .OrderByDescending(o => o.id)
+                .Skip((request.pageIndex - 1) * request.pageSize)
+                .Take(request.pageSize)
                 .ToListAsync();
 
-            return Ok(new { code = 0, msg = "ok", data = orders });
+            return Ok(new
+            {
+                code = 0,
+                msg = "ok",
+                data = list,
+                total = total,
+                page = request.pageIndex,
+                pageSize = request.pageSize
+            });
         }
     }
 }

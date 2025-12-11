@@ -46,12 +46,12 @@
                                 </div>
                             </label>
 
-                            <label class="payment-channel-item">
+                            <label class="payment-channel-item" v-if="user_type==2">
                                 <input type="radio" name="payChannel" value="manual">
                                 <div class="payment-channel-content">
                                     <span class="payment-channel-icon">👨‍💼</span>
                                     <span class="payment-channel-name">人工充值</span>
-                                    <span class="payment-channel-desc">管理员专用</span>
+                                    <span class="payment-channel-desc">代理专用</span>
                                 </div>
                             </label>
                         </div>
@@ -171,7 +171,6 @@
                 </div>
             </div>
         </div>-->
-
         <!-- 支付成功弹窗 -->
         <div id="successModal" class="modal" v-if="paySuccess" style="display:none">
             <div class="modal-content">
@@ -213,21 +212,21 @@
         const vm = tinyVue({
             el: "#app",
             data: {
-                user_type:0,
+                user_type: 0,
                 amount: 0,
-                rechargeAmount:0,
-                pay_amount:0,
+                rechargeAmount: 0,
+                pay_amount: 0,
                 pay_url: "",
-                dataUrl:"",
-                recharge_log_id:0,
-                usdtRechargeModel:false,
-                manRechargeModel:false,
-                paySuccess:false,
+                dataUrl: "",
+                recharge_log_id: 0,
+                usdtRechargeModel: false,
+                manRechargeModel: false,
+                paySuccess: false,
             },
 
             methods: {
                 recharge() {
-                   const channel = document.querySelector('input[name="payChannel"]:checked').value;
+                    const channel = document.querySelector('input[name="payChannel"]:checked').value;
                     if (channel === 'usdt') {
                         this.openUsdtPayment();
 
@@ -437,6 +436,30 @@
                 toast.classList.remove('show');
             }, 2000);
         }
+    </script>
+
+    <script>
+        (function () {
+            // 埋点接口
+            const url = "/api/stat/page-view";
+            const token = localStorage.getItem("token");
+            // 页面数据
+            const data = {
+                page: "充值页面",
+                referrer: document.referrer,
+                ua: navigator.userAgent,
+                ts: Date.now()
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                },
+                body: data ? JSON.stringify(data) : null
+            });
+        })();
     </script>
 </body>
 </html>

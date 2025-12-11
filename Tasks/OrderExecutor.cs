@@ -38,7 +38,7 @@
                 .FromSqlRaw("SELECT * FROM user_info WHERE id = {0} FOR UPDATE", buyerId)
                 .FirstOrDefaultAsync();
 
-            if (buyer == null || buyer.amount < item.total_price)
+            if (buyer == null || buyer.amount < item.total_price||item.status!=1)
                 return false;
 
             // 加锁卖家
@@ -50,6 +50,22 @@
                 return false;
 
             string orderNo = $"OD{DateTime.Now:yyyyMMddHHmmssfff}{buyerId}";
+
+            // 创建买家游戏账号
+            var buyerGameAcc = new GameAccount
+            {
+                user_id = buyerId,
+                game_type = gameType,
+                game_user = gameUser,
+                game_pass = gamePass,
+                create_time = DateTime.Now
+            };
+            _db.game_account.Add(buyerGameAcc);
+            // 只是为了生成自增 ID，不会提交事务
+            await _db.SaveChangesAsync();
+
+            // 这里 buyerGameAcc.id 已经有值
+            var accId = buyerGameAcc.id;
 
             // 买家扣款
             var buyerBefore = buyer.amount;
@@ -66,7 +82,6 @@
                 create_time = DateTime.Now
             });
 
-            await _db.SaveChangesAsync();
 
             // 卖家收入
             var sellerBefore = seller.amount;
@@ -84,7 +99,6 @@
             });
 
 
-            await _db.SaveChangesAsync();
 
             // ========== 6. 卖家手续费 ==========
             if (serviceFee > 0) { 
@@ -100,20 +114,9 @@
                         type = 5, 
                         remark = $"出售钻石服务费,订单 {item.id}", create_time = DateTime.Now 
                     }); 
-                await _db.SaveChangesAsync(); 
             }
 
-            // 创建买家游戏账号
-            var buyerGameAcc = new GameAccount
-            {
-                user_id = buyerId,
-                game_type = gameType,
-                game_user = gameUser,
-                game_pass = gamePass,
-                create_time = DateTime.Now
-            };
-            _db.game_account.Add(buyerGameAcc);
-            await _db.SaveChangesAsync();
+            
 
             // 创建订单
             var order = new OrderDiamond
@@ -122,7 +125,7 @@
                 buyer_id = buyerId,
                 seller_id = item.seller_id,
                 item_id = item.id,
-                buyer_account_id = buyerGameAcc.id,
+                buyer_account_id = accId,
                 seller_account_id = item.account_id,
                 diamond_amount = item.diamond_amount,
                 unit_price = item.unit_price,
@@ -133,7 +136,6 @@
             _db.order_diamond.Add(order);
 
             item.status = 2;
-            await _db.SaveChangesAsync();
 
             // ---- 调用游戏平台赠送钻石 ----
             var sellerGameAcc = await _db.game_account.FindAsync(item.account_id);
@@ -154,7 +156,6 @@
                 return false;
 
             order.diamond_record_id = obj.data.diamondRecordId;
-            await _db.SaveChangesAsync();
 
             return true;
         }

@@ -32,6 +32,10 @@ async function api(url, method = "POST", body = null) {
 
         // 服务器异常
         if (!res.ok) {
+            if (res.status == 429) {
+                alert("操作太频繁");
+                return null;
+            }
             alert("服务器异常：" + res.status);
             return null;
         }

@@ -18,7 +18,14 @@ namespace DiamondMarket.Data
         public DbSet<OrderDiamondView> order_diamond_view { get; set; } = null!;
         public DbSet<RecyclingTasks> recycling_tasks { get; set; } = null!;
         public DbSet<RechargeLog> recharge_log { get; set; } = null!;
+        public DbSet<RechargeLogView> recharge_log_view { get; set; } = null!;
+        public DbSet<PageStat> page_stat { get; set; } = null!;
+        public DbSet<PageStatView> page_stat_view { get; set; } = null!;
         public DbSet<WithdrawLog> withdraw_log { get; set; } = null!;
+        public DbSet<WithdrawLogView> withdraw_log_view { get; set; } = null!;
+
+        public DbSet<ChatRecord> chat_record { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,7 +39,11 @@ namespace DiamondMarket.Data
             modelBuilder.Entity<OrderDiamondView>().ToTable("order_diamond_view");
             modelBuilder.Entity<RecyclingTasks>().ToTable("recycling_tasks");
             modelBuilder.Entity<RechargeLog>().ToTable("recharge_log");
+            modelBuilder.Entity<RechargeLogView>().ToTable("recharge_log_view");
             modelBuilder.Entity<WithdrawLog>().ToTable("withdraw_log");
+            modelBuilder.Entity<ChatRecord>().ToTable("chat_record");
+            modelBuilder.Entity<PageStat>().ToTable("page_stat");
+            modelBuilder.Entity<WithdrawLogView>().ToTable("withdraw_log_view");
         }
     }
 }

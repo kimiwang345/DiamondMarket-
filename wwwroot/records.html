@@ -63,9 +63,8 @@
 
                             <div class="record-right">
                                 <div class="record-amount">¥ -{{ item.amount }}</div>
-                                <div class="record-status status-pending">
-                                    {{ getStatus(item.status) }}
-                                </div>
+                                <div class="record-status status-completed" v-if="item.status==2"> {{ getStatus(item.status) }}</div>
+                                <div class="record-status status-pending" v-if="item.status!=2"> {{ getStatus(item.status) }}</div>
 
                             </div>
                         </div>
@@ -83,14 +82,16 @@
 
                         <div class="record-item" v-for="item in rechargeLogs">
                             <div class="record-info">
-                                <div class="record-title">{{ item.pay_channel }} 💎</div>
+                                <div class="record-title">{{ getChannel(item.pay_channel) }} 💎</div>
                                 <div class="record-meta">{{ item.order_no }}</div>
                                 <div class="record-time">{{ item.create_time }}</div>
                             </div>
 
                             <div class="record-right">
                                 <div class="record-amount">¥ +{{ item.amount }}</div>
-                                <div class="record-status status-completed">已完成</div>
+                                <div class="record-status status-pending" v-if="item.status==0">支付中</div>
+                                <div class="record-status status-completed" v-if="item.status==1">已完成</div>
+                                <div class="record-status status-pending" v-if="item.status==2">失败</div>
                             </div>
                         </div>
 
@@ -138,7 +139,17 @@
                         case 3: return "提现失败";
                     }
                     return "未知状态";
-                }
+                },
+                getChannel(channel) {
+                    switch (channel) {
+                        case 'WX': return "微信";
+                        case 'ZFB': return "支付宝";
+                        case "CARD": return "银行卡";
+                        case "usdt": return "USDT";
+                        case "manual": return "人工授权";
+                    }
+                    return "未知";
+                },
             }
         });
         async function loadData() {
@@ -154,5 +165,28 @@
         loadData();
     </script>
 
+    <script>
+        (function () {
+            // 埋点接口
+            const url = "/api/stat/page-view";
+            const token = localStorage.getItem("token");
+            // 页面数据
+            const data = {
+                page: "充值提现页面",
+                referrer: document.referrer,
+                ua: navigator.userAgent,
+                ts: Date.now()
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": "Bearer " + token } : {})
+                },
+                body: data ? JSON.stringify(data) : null
+            });
+        })();
+    </script>
 </body>
 </html>
