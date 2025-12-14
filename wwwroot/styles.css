@@ -2341,3 +2341,47 @@ body.light-theme .modal-btn.confirm {
     background: rgba(212, 175, 55, 0.3);
 }
 
+/* 搜索框 */
+.search-box {
+    padding: 15px 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 35px;
+    color: #888;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 40px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 25px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+
+    .search-input:focus {
+        border-color: #ffd700;
+    }
+
+    .search-input::placeholder {
+        color: #888;
+    }
+
+.clear-search {
+    position: absolute;
+    right: 35px;
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}

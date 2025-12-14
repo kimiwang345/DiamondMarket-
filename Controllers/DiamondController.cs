@@ -4,6 +4,7 @@ using DiamondMarket.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using static DiamondMarket.Data.Common;
 
 namespace DiamondMarket.Controllers
@@ -23,12 +24,17 @@ namespace DiamondMarket.Controllers
             _httpFactory = httpFactory;
         }
 
+        public class QuerySaleListRequest
+        {
+            public string? tradeCode { get; set; } = "";
+        }
+
         // 列出在售商品
         [HttpPost("salelist")]
-        public async Task<IActionResult> GetSaleList()
+        public async Task<IActionResult> GetSaleList([FromBody] QuerySaleListRequest req)
         {
             var list = await _db.diamond_sale_item_view
-                .Where(x => x.status == 1)
+                .Where(x => x.status == 1&&x.trade_code==req.tradeCode)
                 .OrderBy(x => x.unit_price)
                 .ToListAsync();
 
@@ -106,6 +112,7 @@ namespace DiamondMarket.Controllers
             public string game_type { get; set; } = "";
             public string game_user { get; set; } = "";
             public string game_pass { get; set; } = "";
+            public string trade_code { get; set; } = "";
             public int diamond_amount { get; set; }
             public decimal unit_price { get; set; }
         }
@@ -174,6 +181,7 @@ namespace DiamondMarket.Controllers
                 diamond_amount = req.diamond_amount,
                 unit_price = req.unit_price,
                 total_price = total,
+                trade_code = req.trade_code,
                 status = 1,
                 create_time = DateTime.Now
             };
@@ -297,6 +305,152 @@ namespace DiamondMarket.Controllers
                 await _db.SaveChangesAsync();
             }
             return Ok(new { code = 0, msg = "ok" });
+        }
+
+
+        [HttpPost("queryGoodList")]///good/list
+        public async Task<IActionResult> queryGoodList()
+        {
+            var claim = User.FindFirst("user_id");
+            if (claim == null)
+                return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
+
+            var userId = long.Parse(claim.Value);
+
+            string agApiUrl = _config["Config:agApiUrl"];
+
+            var http = _httpFactory.CreateClient();
+            var reqObj = new object();
+            var res = await http.PostAsJsonAsync(agApiUrl + "/zs/diamond/good/list", reqObj);
+            LogManager.Info("请求ag接口[querydiamond],入参:" + reqObj + ",出参:" + await res.Content.ReadAsStringAsync());
+            var obj = await res.Content.ReadFromJsonAsync<QueryGoodListResponse>();
+            
+            if (obj == null || obj.code != 200)
+            {
+                return Ok(new { code = 400, msg = "未查询到商品" });
+            }
+
+            return Ok(new { code = 0, msg = "ok", data = obj.data });
+        }
+
+
+        public class BuyDiamondReq
+        {
+            public int goodId { get; set; } = 0;
+            public string loginName { get; set; }
+            public string password { get; set; }
+            public decimal price { get; set; }
+            public int diamondAmount { get; set; }
+        }
+
+        [HttpPost("buyDiamond")]///good/list
+        public async Task<IActionResult> buyDiamond([FromBody] BuyDiamondReq req)
+        {
+            if (req.goodId<=0) {
+                return Ok(new { code = 401, msg = "请选择钻石商品" });
+            }
+            var claim = User.FindFirst("user_id");
+            if (claim == null)
+                return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
+
+            var userId = long.Parse(claim.Value);
+            // 加锁买家
+            var buyer = await _db.user_info
+                .FromSqlRaw("SELECT * FROM user_info WHERE id = {0} FOR UPDATE", userId)
+                .FirstOrDefaultAsync();
+            if (buyer == null || buyer.amount < req.price) {
+                return Ok(new { code = 401, msg = "余额不足" });
+            }
+            if (string.IsNullOrEmpty(req.loginName)||string.IsNullOrEmpty(req.password)) {
+                return Ok(new { code = 401, msg = "请填写游戏账号密码" });
+            }
+            string agApiUrl = _config["Config:agApiUrl"];
+            var http = _httpFactory.CreateClient();
+            var reqQueryDiamondObj = new
+            {
+                loginName = req.loginName,
+                password = req.password
+            };
+            var resQueryDiamond = await http.PostAsJsonAsync(agApiUrl + "/zs/diamond/query", reqQueryDiamondObj);
+            var objQueryDiamond = await resQueryDiamond.Content.ReadFromJsonAsync<QueryDiamondResponse>();
+            LogManager.Info("请求ag接口[querydiamond],入参:" + reqQueryDiamondObj + ",出参:" + await resQueryDiamond.Content.ReadAsStringAsync());
+            if (objQueryDiamond == null || objQueryDiamond.code != 200)
+            {
+                return Ok(new { code = 400, msg = "请检查游戏账号和密码是否正确" });
+            }
+            var reqPaymentChannelObj = new object();
+            var res = await http.PostAsJsonAsync(agApiUrl + "/zs/diamond/paymentChannel/list", reqPaymentChannelObj);
+            LogManager.Info("请求ag接口[paymentChannelList],入参:" + reqPaymentChannelObj + ",出参:" + await res.Content.ReadAsStringAsync());
+            var obj = await res.Content.ReadFromJsonAsync<QueryPaymentChannelListResponse>();
+
+            if (obj == null || obj.code != 200)
+            {
+                return Ok(new { code = 400, msg = "未配置余额支付渠道，请联系管理" });
+            }
+            if (obj.data == null || obj.data.Count < 1)
+            {
+                return Ok(new { code = 400, msg = "未配置余额支付渠道，请联系管理" });
+            }
+
+            using var tx = await _db.Database.BeginTransactionAsync();
+            //扣除余额
+            
+            var buyerBefore = buyer.amount;
+            buyer.amount -= req.price;
+
+            _db.user_balance_log.Add(new UserBalanceLog
+            {
+                user_id = buyer.id,
+                amount = -req.price,
+                before_amount = buyerBefore,
+                after_amount = buyer.amount,
+                type = 3,
+                remark = $"购买钻石(商城)",
+                create_time = DateTime.Now
+            });
+
+            var orderSystemDiamond = new OrderSystemDiamond
+            {
+                buyer_id = userId,
+                diamond_amount = req.diamondAmount,
+                total_price = req.price,
+                good_id = req.goodId,
+                game_user = req.loginName,
+                game_pass = req.password,
+                status = 0,
+                create_time = DateTime.Now,
+            };
+            //保存订单
+            _db.order_system_diamond.Add(orderSystemDiamond);
+            await _db.SaveChangesAsync();
+
+           
+            int zsOrderPaymentChannelId = obj.data[0].id;
+
+            var reqObj = new {
+                loginName=req.loginName,
+                password = req.password,
+                zsOrderGoodId = req.goodId,
+                zsOrderPaymentChannelId = zsOrderPaymentChannelId,
+            };
+            var resBuy = await http.PostAsJsonAsync(agApiUrl + "/zs/diamond/buyDiamond", reqObj);
+            LogManager.Info("请求ag接口[buyDiamond],入参:" + reqObj + ",出参:" + await res.Content.ReadAsStringAsync());
+            var objBuy = await resBuy.Content.ReadFromJsonAsync<BuyDiamondResponse>();
+            
+            if (objBuy == null || objBuy.code != 200)
+            {
+                return Ok(new { code = 400, msg = "购买失败" });
+            }
+            var objBuyData = objBuy.data;
+            if (objBuyData.payPrice!=req.price) {
+                //金额不一致，有人串改价格
+                buyer.amount -= (objBuyData.payPrice- req.price);
+            }
+            orderSystemDiamond.order_no = objBuyData.orderNo;
+            orderSystemDiamond.status =1;
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return Ok(new { code = 0, msg = "ok", data = obj.data });
         }
     }
 }

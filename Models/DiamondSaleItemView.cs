@@ -8,6 +8,7 @@ namespace DiamondMarket.Models
         public long id { get; set; }
         public long seller_id { get; set; }
         public string nickname { get; set; }
+        public string trade_code { get; set; }
         public long account_id { get; set; }
         public int diamond_amount { get; set; }
         public decimal unit_price { get; set; }

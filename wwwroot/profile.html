@@ -137,6 +137,7 @@
                         <div class="record-item" v-for="item in selling" v-for-template>
                             <div class="record-info">
                                 <div class="record-title">{{ item.diamond_amount }} 💎</div>
+                                <div class="record-title" v-if="item.trade_code!=''">交易码：{{ item.trade_code }} </div>
                                 <div class="record-meta">单价: ¥{{ item.unit_price }}/钻</div>
                                 <div class="record-time">发布于 {{ item.create_time }}</div>
                             </div>
@@ -308,7 +309,6 @@
                     <button class="quick-reply-btn" onclick="sendQuickReply('如何发布商品？')">如何发布商品？</button>
                     <button class="quick-reply-btn" v-on:click="sendQuickReply('如何充值？')">如何充值？</button>
                     <button class="quick-reply-btn" v-on:click="sendQuickReply('交易安全吗？')">交易安全吗？</button>
-                    <button class="quick-reply-btn" v-on:click="sendQuickReply('手续费是多少？')">手续费是多少？</button>
                 </div>
 
                 <!-- 输入区域 -->

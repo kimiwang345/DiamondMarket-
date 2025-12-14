@@ -47,7 +47,7 @@
 
             // 查询所有在售的订单
             var items = await db.diamond_sale_item
-                .Where(x => x.status == 1)
+                .Where(x => x.status == 1&&x.trade_code=="")
                 .OrderBy(x => x.unit_price)
                 .ToListAsync();
             if (tasks != null && tasks.Count > 0) {
@@ -103,6 +103,7 @@
             if (needDiamond <= 0)
             {
                 task.status = 1;
+                await db.SaveChangesAsync();
                 return;
             }
             if (item.unit_price>= task.min_unit_price&& task.max_unit_price>= item.unit_price) {

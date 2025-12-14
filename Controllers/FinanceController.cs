@@ -432,6 +432,10 @@ namespace DiamondMarket.Controllers
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
             var userId = long.Parse(User.FindFirst("user_id")!.Value);
 
+            
+
+            using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
             // 悲观锁，确保不会并发扣余额
             var dealUser = await _db.user_info
                 .FromSql($"SELECT * FROM user_info WHERE id = {userId} FOR UPDATE")
@@ -441,8 +445,6 @@ namespace DiamondMarket.Controllers
             {
                 return Ok(new { code = 404, msg = "无权限" });
             }
-
-            using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
 
             var item = await _db.withdraw_log.FindAsync(id);
             if (item == null) return NotFound(new { code = 404, msg = "提现不存在" });

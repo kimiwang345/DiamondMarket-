@@ -25,6 +25,7 @@ namespace DiamondMarket.Data
         public DbSet<WithdrawLogView> withdraw_log_view { get; set; } = null!;
 
         public DbSet<ChatRecord> chat_record { get; set; } = null!;
+        public DbSet<OrderSystemDiamond> order_system_diamond { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,6 +45,7 @@ namespace DiamondMarket.Data
             modelBuilder.Entity<ChatRecord>().ToTable("chat_record");
             modelBuilder.Entity<PageStat>().ToTable("page_stat");
             modelBuilder.Entity<WithdrawLogView>().ToTable("withdraw_log_view");
+            modelBuilder.Entity<OrderSystemDiamond>().ToTable("order_system_diamond");
         }
     }
 }

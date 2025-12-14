@@ -45,17 +45,24 @@
             </div>
             <!-- 批量购买区域 -->
             <!--<div class="bulk-purchase-mobile">
-                <input type="number"
-                       class="input-field"
-                       placeholder="输入需要购买的钻石数量"
-                       min="1"
-                       v-model="bulkAmount"
-                       oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                <button class="btn-primary" v-on:click="openBulk">
-                    批量购买
-                </button>
-            </div>-->
+        <input type="number"
+               class="input-field"
+               placeholder="输入需要购买的钻石数量"
+               min="1"
+               v-model="bulkAmount"
+               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <button class="btn-primary" v-on:click="openBulk">
+            批量购买
+        </button>
+    </div>-->
             <!-- 在售商品列表 -->
+            <div class="search-box">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input type="text" class="search-input" placeholder="输入私下交易码搜索" v-model="tradeCode" onchange="search()">
+            </div>
             <div class="products-list">
 
                 <!-- 无数据时 -->
@@ -121,12 +128,12 @@
                         </div>
 
                         <!--<div class="form-group">
-                            <label class="form-label">游戏类型</label>
-                            <select class="form-input" v-model="modal.gameType" required>
-                                <option value="">请选择游戏类型</option>
-                                <option value="AGPoker">AGPoker</option>
-                            </select>
-                        </div>-->
+                    <label class="form-label">游戏类型</label>
+                    <select class="form-input" v-model="modal.gameType" required>
+                        <option value="">请选择游戏类型</option>
+                        <option value="AGPoker">AGPoker</option>
+                    </select>
+                </div>-->
 
                         <div class="form-group">
                             <label class="form-label">游戏账号</label>
@@ -190,7 +197,7 @@
 
                 // 批量购买输入
                 bulkAmount: "",
-
+                tradeCode:'',
                 // 弹窗状态
                 showModal: false,
                 modal: {
@@ -210,7 +217,9 @@
             methods: {
                 // 加载在售商品列表
                 async loadData() {
-                    const res = await api("/api/diamond/salelist", "POST");
+                    const res = await api("/api/diamond/salelist", "POST", {
+                        tradeCode: this.tradeCode
+                    });
                     if (!res) return;
                     // 后端返回 { code:0, data:[...] }
                     this.items = res.data || [];
@@ -308,7 +317,9 @@
         // 首次进入页面加载列表
         vm.loadData();
         vm.loadData2();
-
+        function search() {
+            vm.loadData();
+        }
         // 打开单个购买弹窗
         function openSingle(item) {
             vm.modal.isBulk = false;

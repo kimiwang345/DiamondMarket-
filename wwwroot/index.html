@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div id="app">
     <!-- 添加顶部导航栏，适配手机 -->
     <header class="header">
         <div class="header-content">
@@ -28,7 +29,14 @@
             <a href="diamond.html" class="feature-card">
                 <div class="card-icon diamond-icon">💎</div>
                 <h2 class="card-title">钻石交易</h2>
-                <p class="card-description">浏览和购买游戏钻石，支持批量购买和自动合并订单</p>
+                <p class="card-description">购买游戏钻石</p>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="diamondShop.html" class="feature-card" v-if="user_type==2" style="display:none">
+                <div class="card-icon diamond-icon">💎</div>
+                <h2 class="card-title">钻石商城</h2>
+                <p class="card-description">从系统商城购买游戏钻石</p>
                 <div class="card-arrow">→</div>
             </a>
 
@@ -39,21 +47,6 @@
                 <div class="card-arrow">→</div>
             </div>
         </div>
-
-        <!--<div class="stats-section">
-            <div class="stat-item">
-                <div class="stat-number">10,000+</div>
-                <div class="stat-label">累计交易</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">5,000+</div>
-                <div class="stat-label">活跃用户</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">99.9%</div>
-                <div class="stat-label">交易成功率</div>
-            </div>
-        </div>-->
     </main>
 
     <!-- 添加底部导航栏，用于手机端页面切换 -->
@@ -71,6 +64,7 @@
             <span class="nav-label">我的</span>
         </a>
     </nav>
+    </div>
     <script src="js/tinyVue.js"></script>
     <script src="js/common.js"></script>
     <script>
@@ -95,6 +89,20 @@
                 body: data ? JSON.stringify(data) : null
             });
         })();
+
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                user_type: 0,
+            }
+        });
+        loadUserData();
+        // 加载数据
+        async function loadUserData() {
+            const user = await api("/api/user/queryUser");
+            vm.user_type = user.data.user_type;
+            vm.$forceUpdate();
+        }
     </script>
 </body>
 </html>
