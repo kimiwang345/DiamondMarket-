@@ -26,6 +26,7 @@ namespace DiamondMarket.Data
 
         public DbSet<ChatRecord> chat_record { get; set; } = null!;
         public DbSet<OrderSystemDiamond> order_system_diamond { get; set; } = null!;
+        public DbSet<ClubCashBill> club_cash_bill { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,6 +47,7 @@ namespace DiamondMarket.Data
             modelBuilder.Entity<PageStat>().ToTable("page_stat");
             modelBuilder.Entity<WithdrawLogView>().ToTable("withdraw_log_view");
             modelBuilder.Entity<OrderSystemDiamond>().ToTable("order_system_diamond");
+            modelBuilder.Entity<ClubCashBill>().ToTable("club_cash_bill");
         }
     }
 }
