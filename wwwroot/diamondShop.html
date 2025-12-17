@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>系统钻石包 - 游戏交易平台</title>
+    <link rel="stylesheet" href="diamondShopStyles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </div>
+
+        <div class="header">
+            <button class="back-btn" onclick="window.history.back()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h1>系统钻石包</h1>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="container">
+            <div class="banner">
+                <div class="banner-icon">💎</div>
+                <div class="banner-content">
+                    <h2>官方钻石包</h2>
+                    <p>安全快速，即买即到</p>
+                </div>
+            </div>
+
+            <div class="packages-list">
+                <div class="package-card" data-id="1" data-diamonds="100" data-price="9.9" v-for="item in goodList">
+                    <div class="package-icon">💎</div>
+                    <div class="package-info">
+                        <div class="package-diamonds">{{item.diamond}}钻石</div>
+                        <div class="package-desc">
+                            <span class="price-value">￥{{item.price}}</span>
+                        </div>
+                    </div>
+                    <button class="buy-btn" v-on:click="showBuyConfirm(item)">立即购买</button>
+                </div>
+            </div>
+
+            <div class="tips-section">
+                <div class="tips-title">购买说明</div>
+                <ul class="tips-list">
+                    <li>购买时请填写正确的游戏账号，如填错账号，导致钻石没到账，损失自行承担</li>
+                    <li>使用平台余额购买</li>
+                    <li>如有问题请联系在线客服</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="buy-modal" id="buyModal">
+            <div class="modal-overlay" onclick="closeBuyModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>确认购买</h3>
+                    <button class="modal-close" onclick="closeBuyModal()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="confirm-info">
+                        <div class="confirm-item">
+                            <span class="confirm-label">钻石数量</span>
+                            <span class="confirm-value" id="confirmDiamonds">{{currGoodItem.diamond}}钻石</span>
+                        </div>
+                        <div class="confirm-item">
+                            <span class="confirm-label">支付金额</span>
+                            <span class="confirm-value highlight" id="confirmPrice">￥{{currGoodItem.price}}</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">游戏账号</label>
+                        <input type="text"
+                               class="form-input"
+                               v-model="gameAccount"
+                               placeholder="请输入游戏账号"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">游戏密码</label>
+                        <input type="password"
+                               class="form-input"
+                               v-model="gamePassword"
+                               placeholder="请输入游戏密码"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>选择支付方式</label>
+                        <div class="payment-methods">
+                            <label class="payment-option">
+                                <input type="radio" name="payment" value="balance" checked />
+                                <div class="payment-content">
+                                    <div class="payment-icon">💰</div>
+                                    <div class="payment-info">
+                                        <div class="payment-name">余额支付</div>
+                                        <div class="payment-balance">可用余额: ￥{{amount}}</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeBuyModal()">取消</button>
+                    <button class="btn-confirm" onclick="confirmBuy()">确认购买</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+    </div>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                user_type: 0,
+                amount: 0,
+                goodList: [],
+                currGoodItem: {},
+                gameAccount:'',
+                gamePassword:'',
+            }
+        });
+        loadUserData();
+        queryGoodList();
+        // 加载数据
+        async function loadUserData() {
+            const user = await api("/api/user/queryUser");
+            vm.user_type = user.data.user_type;
+            vm.amount = user.data.amount;
+            vm.$forceUpdate();
+        }
+        // 加载数据
+        async function queryGoodList() {
+            const resp = await api("/api/diamond/queryGoodList");
+            vm.goodList = resp.data;
+            vm.$forceUpdate();
+        }
+
+
+
+        let currentPackageId = null;
+        let currentDiamonds = 0;
+        let currentPrice = 0;
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-theme');
+        }
+        //{
+        //  "id": 11,
+        //  "name": "5w钻石",
+        //  "diamond": 50000,
+        //  "price": "1000",
+        //  "goodTypeDesc": "钻石",
+        //  "discount": "100"
+        //}
+        function showBuyConfirm(goodItem) {
+            vm.currGoodItem = goodItem;
+            document.getElementById('buyModal').classList.add('active');
+            vm.$forceUpdate();
+        }
+
+        function closeBuyModal() {
+            document.getElementById('buyModal').classList.remove('active');
+        }
+
+        async function confirmBuy() {
+            const resp = await api("/api/diamond/buyDiamond", "POST", {
+                loginName: vm.gameAccount,
+                password: vm.gamePassword,
+                goodId: vm.currGoodItem.id,
+                price: vm.currGoodItem.price,
+                diamondAmount: vm.currGoodItem.diamond,
+            });
+            if (!resp) return;
+            // 模拟购买请求
+            showToast('购买成功！钻石将在1分钟内到账');
+            closeBuyModal();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

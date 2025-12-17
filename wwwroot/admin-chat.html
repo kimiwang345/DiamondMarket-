@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服中心</title>
+
+    <!--<link rel="stylesheet" href="styles.css">-->
+    <link rel="stylesheet" href="admin-chat-styles.css">
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+</head>
+<body>
+
+    <div class="app-container" id="app">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <a href="profile.html" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </a>
+            <h1 class="header-title">客服中心</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 用户列表面板 -->
+            <div class="user-list-panel" id="userListPanel">
+                <!-- 搜索框 -->
+                <div class="search-box">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <input type="text" class="search-input" placeholder="搜索用户名/ID" id="searchInput" onchange="searchUsers()">
+                </div>
+
+                <!-- 用户列表 -->
+                <div class="user-list" id="userList">
+                    <!-- 用户项 -->
+                </div>
+            </div>
+
+
+            <!-- 添加客服弹窗 -->
+            <div id="customerServiceModal" class="chat-modal" v-if="customerServiceShow">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-header-info">
+                            <div class="chat-avatar online">
+                                <span>{{currentNickNameFirst}}</span>
+                                <span class="online-dot"></span>
+                            </div>
+                            <div class="chat-header-text">
+                                <h3>在线客服</h3>
+                                <span class="chat-status">在线</span>
+                            </div>
+                        </div>
+                        <button class="chat-close-btn" v-on:click="closeChat">✕</button>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <button class="chat-attachment-btn" v-on:click="selectImage()">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </button>
+
+                            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+
+                            <input type="text" class="chat-input" id="chatInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+
+                            <button class="chat-send-btn" v-on:click="sendMessage()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加图片预览弹窗 -->
+            <div id="imagePreviewModal" class="image-preview-modal" onclick="closeImagePreview()">
+                <div class="image-preview-container">
+                    <img id="previewImage" src="/placeholder.svg" alt="预览图片">
+                    <button class="image-preview-close">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户详情弹窗 -->
+        <div class="user-detail-modal" id="userDetailModal">
+            <div class="modal-overlay" onclick="closeUserDetail()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>用户详情</h3>
+                    <button class="close-modal" onclick="closeUserDetail()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-avatar">
+                        <img src="/placeholder.svg?height=80&width=80" alt="用户头像">
+                    </div>
+                    <div class="detail-info">
+                        <div class="detail-row">
+                            <span class="detail-label">用户名</span>
+                            <span class="detail-value">王者玩家001</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">用户ID</span>
+                            <span class="detail-value">1001</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">注册时间</span>
+                            <span class="detail-value">2023-10-15</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">账户余额</span>
+                            <span class="detail-value highlight">¥1,280.00</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">交易次数</span>
+                            <span class="detail-value">28次</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">最近登录</span>
+                            <span class="detail-value">2023-12-05 14:30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图片预览 -->
+        <div class="image-preview-modal" id="imagePreviewModal" onclick="closeImagePreview()">
+            <img src="/placeholder.svg" alt="预览图片" id="previewImage">
+        </div>
+
+        <!-- Toast提示 -->
+        <div class="toast" id="toast"></div>
+    </div>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                customerServiceShow: false,
+                currentNickNameFirst:'',
+            }
+        });
+
+    </script>
+
+
+    <script>
+
+        /* ===============================
+            API 封装（可替换 baseURL）
+        ================================ */
+        const baseURL = "/api/chat";
+
+        /** GET 请求 */
+        async function get(url) {
+            const res = await fetch(baseURL + url, { credentials: "include" });
+            return res.json();
+        }
+
+        /** POST 请求 */
+        async function post(url, data) {
+            const res = await fetch(baseURL + url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+                credentials: "include"
+            });
+            return res.json();
+        }
+
+
+        /* ===============================
+            全局变量
+        ================================ */
+        let currentUserId = null;
+        let loadingHistory = false;
+        let beforeId = 0;
+
+        function searchUsers(){
+            const searchInput = document.getElementById("searchInput");
+            const search = searchInput.value.trim();
+            loadUsers(search)
+        }
+
+        /* ===============================
+            ① 载入用户列表
+        ================================ */
+        async function loadUsers(search) {
+            const list = await post("/users?search=" + search);
+            const ul = document.getElementById("userList");
+            ul.innerHTML = "";
+
+            list.data.forEach(u => {
+                const div = document.createElement("div");
+                div.className = "user-item" + (u.unread > 0 ? " unread" : "");
+                div.dataset.userid = u.user_id;
+                div.onclick = () => openChat(u.user_id, u.nickname, u.nickname_first);
+
+                div.innerHTML = `
+                    <div class="user-avatar">
+                        <div class="message-avatar">${u.nickname_first}</div>
+                         ${u.online ==1 ? `<span class="online-status online"></span>` : ""}
+                        
+                        
+                    </div>
+                    <div class="user-info">
+                        <div class="user-header">
+                            <span class="user-name">${u.nickname}</span>
+                            <span class="msg-time">${u.last_time_short || ""}</span>
+                        </div>
+                        <div class="user-preview">
+                            
+                            <span class="last-msg">${u.last_msg || ""}</span>
+                             ${u.unread > 0 ? `<span class="unread-badge">${u.unread}</span>` : ""}
+                        </div>
+                    </div>
+                `;
+                ul.appendChild(div);
+            });
+        }
+
+        let chatMaxId = Number.MAX_SAFE_INTEGER;  // 用于分页：历史记录最旧的 id
+        let latestId = 0;                         // 用于轮询：最新的消息 id
+        let isChatOpen = false;
+        /* ===============================
+            ② 打开聊天窗口
+        ================================ */
+        async function openChat(userId, nickname, nickNameFirst) {
+            vm.currentNickNameFirst = nickNameFirst;
+            currentUserId = userId;
+            vm.customerServiceShow = true;
+            vm.unreadChatCount = 0;
+            isChatOpen = true;
+
+            await api("/api/chat/read-all-admin?fromId=" + currentUserId, "POST", {});   // 标记已读
+
+            document.getElementById("chatMessages").innerHTML = "";
+
+            chatMaxId = Number.MAX_SAFE_INTEGER;
+            latestId = 0;
+
+            await loadHistoryFrist();
+
+            startPolling();
+            vm.$forceUpdate();
+        }
+        vm.closeChat = function () {
+            vm.customerServiceShow = false;
+            isChatOpen = false;
+            clearInterval(timer);
+        }
+
+        let sendMsgRuning = false;
+        async function sendMessage() {
+            if (sendMsgRuning) {
+                return;
+            }
+            sendMsgRuning = true;
+            try {
+                const input = document.getElementById('chatInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                //appendMessage(message, 'sent');
+
+                await api("/api/chat/send", "POST", {
+                    to_id: currentUserId,          // 后端客服 ID
+                    msg_type: 1,
+                    content: message
+                });
+                latestMsg();
+                input.value = '';
+            } catch (e) {
+                sendMsgRuning = false;
+            } finally {
+
+                sendMsgRuning = false;
+            }
+        }
+        function appendMessage(content, type, isImage = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ' + type;
+
+            let html = '';
+            if (type === 'received') {
+                html += '<div class="message-avatar">'+vm.currentNickNameFirst+'</div>';
+            }
+            html += '<div class="message-content">';
+            if (isImage) {
+                html += '<div class="message-bubble image-message"><img src="' + content + '" alt="图片" onclick="previewImage(this.src)"></div>';
+            } else {
+                html += '<div class="message-bubble">' + content + '</div>';
+            }
+            html += '<div class="message-time">' + getCurrentTime() + '</div>';
+            html += '</div>';
+
+            wrapper.innerHTML = html;
+            chatMessages.appendChild(wrapper);
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
+
+        }
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 先上传图片
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const upload = await fetch("/api/upload/uploadChatImg", {
+                method: "POST",
+                body: formData
+            }).then(r => r.json());
+
+            const url = upload.url;
+
+            //appendMessage(url, 'sent', true);
+
+            await api("/api/chat/send", "POST", {
+                to_id: currentUserId,
+                msg_type: 2,
+                content: url
+            });
+            latestMsg();
+        }
+
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        function selectImage() {
+            document.getElementById('imageInput').click();
+        }
+
+        // 预览图片 
+        function previewImage(src) { document.getElementById('previewImage').src = src; document.getElementById('imagePreviewModal').classList.add('active'); }
+        // 关闭图片预览
+        function closeImagePreview() { document.getElementById('imagePreviewModal').classList.remove('active'); }
+        async function loadHistoryFrist() {
+            const resp = await api(`/api/chat/records?maxId=${chatMaxId}&limit=20&chatUserId=${currentUserId}`, "POST", {});
+            const list = resp.data;
+
+            if (list.length === 0) return;
+
+            // 更新 maxId（下次继续加载）
+            chatMaxId = Math.min(...list.map(x => x.id));
+
+            const parent = document.getElementById('chatMessages');
+
+            // 保持滚动位置不跳动
+            const oldScroll = parent.scrollHeight;
+
+            list.forEach(item => {
+                appendMessage(
+                    item.content,
+                    item.from_id === 0 ? "sent" : "received",
+                    item.msg_type === 2
+                );
+
+                latestId = Math.max(latestId, item.id);
+            });
+
+            parent.scrollTop = parent.scrollHeight - oldScroll;
+        }
+        let isLoadingHistory = false;
+
+        async function loadHistory() {
+            if (isLoadingHistory) return; // 阻止重复
+
+            isLoadingHistory = true;
+            try {
+                const resp = await api(`/api/chat/records?maxId=${chatMaxId}&limit=20&chatUserId=${currentUserId}`, "POST", {});
+                const list = resp.data;
+
+                if (list.length === 0) return;
+
+                chatMaxId = Math.min(...list.map(x => x.id));
+
+                const parent = document.getElementById('chatMessages');
+
+                // 记录滚动位置防止跳动
+                const oldHeight = parent.scrollHeight;
+
+                // ⭐⭐⭐ 按 id 从小到大排序（旧 → 新）
+                list.sort((a, b) => b.id - a.id);
+                // ⭐⭐⭐ 关键：历史消息必须反向插入
+                list.forEach(item => {
+                    insertHistoryMessage(item);
+                    latestId = Math.max(latestId, item.id);
+                });
+
+                // 恢复滚动位置
+                parent.scrollTop = parent.scrollHeight - oldHeight;
+            } finally {
+                isLoadingHistory = false;
+            }
+        }
+        function insertHistoryMessage(item) {
+            const parent = document.getElementById('chatMessages');
+
+            const wrapper = createMessageNode(item);
+
+            // ⭐⭐⭐ 历史记录插入顶部
+            parent.insertBefore(wrapper, parent.firstChild);
+        }
+
+        function createMessageNode(item) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ' + (item.from_id === 0 ? 'sent' : 'received');
+
+            let html = '';
+
+            if (item.from_id !== 0) {
+                html += '<div class="message-avatar">用</div>';
+            }
+
+            html += '<div class="message-content">';
+
+            if (item.msg_type === 2) {
+                // 图片
+                html += `<div class="message-bubble image-message">
+            <img src="${item.content}" onclick="previewImage(this.src)">
+         </div>`;
+            } else {
+                // 文本
+                html += `<div class="message-bubble">${item.content}</div>`;
+            }
+
+            html += `<div class="message-time">${formatTime(item.create_time)}</div>`;
+            html += `</div>`;
+
+            wrapper.innerHTML = html;
+            return wrapper;
+        }
+        function formatTime(t) {
+            const d = new Date(t);
+            return d.getHours().toString().padStart(2, '0')
+                + ":" +
+                d.getMinutes().toString().padStart(2, '0');
+        }
+
+
+        let timer = null;
+
+        function startPolling() {
+            if (timer) clearInterval(timer);
+
+            timer = setInterval(async () => {
+                if (!isChatOpen) return;
+                latestMsg();
+               
+
+            }, 2000);
+        }
+
+        async function latestMsg() {
+            const resp = await api(`/api/chat/latest?afterId=${latestId}&chatUserId=${currentUserId}`);
+            const list = resp.data;
+            list.forEach(item => {
+                appendMessage(
+                    item.content,
+                    item.from_id === 0 ? "sent" : "received",
+                    item.msg_type === 2
+                );
+                latestId = item.id;
+            });
+        }
+        //loadUnread();
+        //async function loadUnread() {
+        //    const resp = await api("/api/chat/unread");
+        //    vm.unreadChatCount = resp.count;
+        //    vm.$forceUpdate();
+        //}
+
+        //setInterval(loadUnread, 10000);  // 10秒刷新一次
+
+
+        /* ===============================
+            初始化
+        ================================ */
+        loadUsers("");
+
+
+        document.getElementById("chatMessages").addEventListener("scroll", async function () {
+            if (this.scrollTop < 50) {
+                await loadHistory();
+            }
+        });
+
+        loadUnread();
+
+        // 音频对象（全局复用）
+        const newMsgAudio = new Audio("/sounds/msgnotice.mp3");
+        newMsgAudio.volume = 0.6;   // 音量 0 ~ 1
+
+        async function loadUnread() {
+            const resp = await api("/api/chat/unread");
+            vm.unreadChatCount = resp.count;
+            if (vm.unreadChatCount > 0) {
+                //播放音频
+                playNewMsgSound();
+            }
+            vm.$forceUpdate();
+        }
+
+        setInterval(loadUnread, 10000);  // 10秒刷新一次
+        function playNewMsgSound() {
+            // iOS 必须先有用户交互才允许播放
+            newMsgAudio.currentTime = 0;
+            newMsgAudio.play().catch(err => {
+                console.log("音频播放被阻止，需要用户操作一次屏幕才可播放", err);
+            });
+        }
+    </script>
+</body>
+</html>

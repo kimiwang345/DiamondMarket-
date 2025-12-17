@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提现处理 - 管理后台</title>
+    <!-- 更换为独立的管理后台样式文件 -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">💎</span>
+                    <span class="logo-text">充值处理</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()">🌓</button>
+            </div>
+        </header>
+        <!-- 更新筛选器结构 -->
+        <div class="filter-container">
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterByStatus('0', this)">待处理</button>
+                <button class="filter-tab" onclick="filterByStatus('1', this)">已完成</button>
+            </div>
+        </div>
+
+        <!-- 更新提现列表结构 -->
+        <div class="withdraw-list">
+            <div class="records-list">
+
+                <div class="no-data" v-if="rechargeLogs.length===0">
+                    暂无充值记录
+                </div>
+
+                <div class="admin-record-item" v-for="item in rechargeLogs">
+                    <div class="admin-record-item-body">
+                        <div class="record-info">
+                            <div class="record-title">{{ getChannel(item.pay_channel) }} 💎</div>
+                            <div class="record-title">{{ item.nickname }}({{item.login_name}})</div>
+                            <div class="record-meta">{{ item.order_no }}</div>
+                            <div class="record-time">{{ item.create_time }}</div>
+                        </div>
+
+                        <div class="record-right">
+                            <div class="record-amount">¥ +{{ item.amount }}</div>
+                            <div class="record-status status-pending" v-if="item.status==0">支付中</div>
+                            <div class="record-status status-completed" v-if="item.status==1">已完成</div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn reject" v-on:click="rejectRecharge(item)" v-if="item.status==0">拒绝</button>
+                        <button class="action-btn approve" v-on:click="completeRecharge(item)" v-if="item.status==0">确认完成</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- Toast提示 -->
+        <div class="toast" id="toast"></div>
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span>首页</span>
+            </a>
+            <a href="admin-recharge.html" class="nav-item active">
+                <span class="nav-icon">💰</span>
+                <span>充值管理</span>
+            </a>
+            <a href="profile.html" class="nav-item">
+                <span class="nav-icon">👤</span>
+                <span>我的</span>
+            </a>
+        </nav>
+    </div>
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                rejectModal: false,
+                withdrawLogs: [],
+                status: -1,
+                rejectReason:"",
+                rejectId: 0,
+
+                // ===== 分页 =====
+                pageIndex: 1,
+                pageSize: 10,
+                total: 0,
+                totalPages: 1,
+
+                // ===== 自动加载控制 =====
+                isLoading: false,
+                finished: false
+            },
+
+            methods: {
+                getStatus(status) {
+                    switch (status) {
+                        case 0: return "待处理";
+                        case 1: return "处理中";
+                        case 2: return "已完成";
+                        case 3: return "已关闭";
+                    }
+                    return "未知状态";
+                },
+                getChannel(channel) {
+                    switch (channel) {
+                        case 'WX': return "微信";
+                        case 'ZFB': return "支付宝";
+                        case "CARD": return "银行卡";
+                        case "usdt": return "USDT";
+                        case "manual": return "人工授权";
+                    }
+                    return "未知";
+                },
+                copyText(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('已复制: ' + text);
+                    }).catch(() => {
+                        showToast('复制失败');
+                    });
+                },
+            }
+        });
+
+        // 加载数据
+        async function loadData(append = false, status=0) {
+            if (vm.isLoading) return;
+            vm.isLoading = true;
+            try {
+                const p = await api("/api/finance/admin-recharge-logs", "POST", {
+                    status: status,
+                    pageIndex: vm.pageIndex,
+                    pageSize: vm.pageSize
+                });
+
+                if (p) {
+                    if (append) {
+                        // 追加到列表末尾
+                        vm.rechargeLogs = vm.rechargeLogs.concat(p.data || []);
+                    } else {
+                        // 首次加载 / 切换状态
+                        vm.rechargeLogs = p.data || [];
+                    }
+
+                    vm.total = p.total || 0;
+                    vm.totalPages = Math.max(1, Math.ceil(vm.total / vm.pageSize));
+
+                    // 如果已经到最后一页
+                    vm.finished = vm.pageIndex >= vm.totalPages;
+                }
+
+                vm.isLoading = false;
+                vm.$forceUpdate();
+            } finally {
+                vm.isLoading = false;
+            }
+        }
+
+        loadData(false,0);
+
+        // 筛选状态
+        function filterByStatus(status, btn) {
+            // 更新标签页状态
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+
+           
+            vm.status = status;
+            vm.pageIndex = 1;
+            vm.finished = false;
+            vm.$forceUpdate();
+            loadData(false,status);
+        }
+
+        // 完成提现
+        async function completeRecharge(item) {
+            if (confirm('确认核对过信息，手动完成该笔充值？')) {
+                const res = await api(`/api/finance/completeRecharge/${item.id}`, "POST");
+                if (!res) return;
+                showToast('已完成');
+                loadData(false,0);
+            }
+        }
+
+        // 拒绝提现
+        async function rejectRecharge(item) {
+            if (confirm('确认核对过信息，手动取消该笔充值？')) {
+                const res = await api(`/api/finance/rejectRecharge/${item.id}`, "POST");
+                if (!res) return;
+                showToast('已完成');
+                loadData(false, 0);
+            }
+        }
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 滚动监听 - 自动下一页
+        window.addEventListener('scroll', () => {
+            if (vm.isLoading || vm.finished) return;
+
+            const scrollTop = window.scrollY;
+            const clientHeight = window.innerHeight;
+            const scrollHeight = document.body.scrollHeight;
+
+            // 距底部 < 150 像素时加载下一页
+            if (scrollTop + clientHeight >= scrollHeight - 150) {
+                vm.pageIndex++;
+                loadData(true, vm.status); // 追加加载
+            }
+        });
+    </script>
+</body>
+</html>

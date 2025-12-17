@@ -1,0 +1,646 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
+  color: #e0e0e0;
+  min-height: 100vh;
+  padding-bottom: 20px;
+}
+
+/* 顶部导航 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: rgba(26, 26, 46, 0.95);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.back-btn {
+  color: #ffd700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.theme-toggle {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: #ffd700;
+}
+
+.sun-icon {
+  display: none;
+}
+
+/* 主内容区 */
+.main-content {
+  padding: 16px;
+}
+
+/* 日期筛选 */
+.filter-section {
+  margin-bottom: 16px;
+}
+
+.date-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-tab {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 20px;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.date-tab.active {
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  color: #000;
+  border-color: transparent;
+}
+
+.custom-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.date-input {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+
+.date-separator {
+  color: #666;
+}
+
+.apply-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 统计标签页 */
+.stats-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stats-tab {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.stats-tab.active {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  border-color: #ffd700;
+}
+
+/* 统计面板 */
+.stats-panel {
+  display: none;
+}
+
+.stats-panel.active {
+  display: block;
+}
+
+/* 汇总卡片 */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.summary-card.highlight {
+  grid-column: span 2;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 149, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sale-icon {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+.purchase-icon {
+  background: rgba(0, 217, 255, 0.2);
+  color: #00d9ff;
+}
+.withdraw-icon {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+}
+.recharge-icon {
+  background: rgba(0, 200, 83, 0.2);
+  color: #00c853;
+}
+.amount-icon {
+  background: rgba(79, 172, 254, 0.2);
+  color: #4facfe;
+}
+.count-icon {
+  background: rgba(156, 39, 176, 0.2);
+  color: #9c27b0;
+}
+.avg-icon {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+.user-icon {
+  background: rgba(0, 150, 136, 0.2);
+  color: #009688;
+}
+.success-icon {
+  background: rgba(0, 200, 83, 0.2);
+  color: #00c853;
+}
+.pending-icon {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+.fee-icon {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 149, 0, 0.3));
+  color: #ffd700;
+}
+.rate-icon {
+  background: rgba(233, 30, 99, 0.2);
+  color: #e91e63;
+}
+.trade-icon {
+  background: rgba(63, 81, 181, 0.2);
+  color: #3f51b5;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.card-value.large {
+  font-size: 24px;
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card-unit {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 渠道筛选 */
+.channel-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: #888;
+}
+
+.channel-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.channel-tab {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.channel-tab.active {
+  background: rgba(79, 172, 254, 0.2);
+  color: #4facfe;
+  border-color: #4facfe;
+}
+
+/* 图表容器 */
+.chart-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.sale {
+  background: #ffd700;
+}
+.legend-dot.purchase {
+  background: #00d9ff;
+}
+.legend-dot.amount {
+  background: #4facfe;
+}
+.legend-dot.fee {
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+}
+.legend-dot.trade {
+  background: #4facfe;
+}
+
+.chart {
+  width: 100%;
+  height: 280px;
+}
+
+/* 数据表格 */
+.data-table-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(79, 172, 254, 0.1);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 8px;
+  color: #4facfe;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.export-btn:active {
+  background: rgba(79, 172, 254, 0.2);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.data-table th {
+  color: #888;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table td {
+  color: #e0e0e0;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+/* 亮色主题 */
+.light-theme {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+  color: #333;
+}
+
+.light-theme .header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .header-title {
+  color: #1a73e8;
+}
+
+.light-theme .back-btn {
+  color: #1a73e8;
+}
+
+.light-theme .theme-toggle {
+  background: rgba(26, 115, 232, 0.1);
+  border-color: rgba(26, 115, 232, 0.3);
+  color: #1a73e8;
+}
+
+.light-theme .moon-icon {
+  display: none;
+}
+.light-theme .sun-icon {
+  display: block;
+}
+
+.light-theme .date-tab {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #666;
+}
+
+.light-theme .date-tab.active {
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  color: #fff;
+}
+
+.light-theme .date-input {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.light-theme .apply-btn {
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  color: #fff;
+}
+
+.light-theme .stats-tab {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #666;
+}
+
+.light-theme .stats-tab.active {
+  background: rgba(26, 115, 232, 0.1);
+  color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.light-theme .summary-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .summary-card.highlight {
+  background: linear-gradient(135deg, rgba(26, 115, 232, 0.05), rgba(66, 133, 244, 0.05));
+  border-color: rgba(26, 115, 232, 0.2);
+}
+
+.light-theme .card-label {
+  color: #666;
+}
+
+.light-theme .card-value {
+  color: #333;
+}
+
+.light-theme .card-value.large {
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.light-theme .channel-tab {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #666;
+}
+
+.light-theme .channel-tab.active {
+  background: rgba(26, 115, 232, 0.1);
+  color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.light-theme .chart-container,
+.light-theme .data-table-container {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .chart-title,
+.light-theme .table-title {
+  color: #333;
+}
+
+.light-theme .legend-item {
+  color: #666;
+}
+
+.light-theme .export-btn {
+  background: rgba(26, 115, 232, 0.1);
+  border-color: rgba(26, 115, 232, 0.3);
+  color: #1a73e8;
+}
+
+.light-theme .data-table th {
+  color: #666;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.light-theme .data-table td {
+  color: #333;
+}
+
+.light-theme .data-table th,
+.light-theme .data-table td {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .data-table tbody tr:hover {
+  background: rgba(26, 115, 232, 0.05);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+}
+
+.light-theme ::-webkit-scrollbar-thumb {
+  background: rgba(26, 115, 232, 0.3);
+}
+
+.btn-buy {
+    padding: 0.25rem 0.9rem;
+    background: rgba(79, 172, 254, 0.15);
+    color: #4facfe;
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    font-size: 0.875rem;
+}
+
+    .btn-buy:active {
+        background: rgba(79, 172, 254, 0.25);
+    }
+/* 按钮 */
+.btn-primary,
+.btn-secondary,
+.btn-buy,
+.btn-action,
+.btn-small {
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+
+.btn-primary {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: #ffffff;
+}
+
+    .btn-primary:active {
+        transform: scale(0.98);
+    }

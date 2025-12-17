@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>交易数据统计 - 管理后台</title>
+    <link rel="stylesheet" href="admin-trade-stats-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="css/chat-styles.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <a href="index.html" class="back-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+        </a>
+        <h1 class="header-title">交易数据统计</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
+        </button>
+    </header>
+
+    <main class="main-content">
+        <!-- 日期筛选 -->
+        <div class="filter-section">
+            <div class="date-tabs">
+                <button class="date-tab active" data-days="7">近7天</button>
+                <button class="date-tab" data-days="30">近30天</button>
+                <button class="date-tab" data-days="90">近90天</button>
+                <button class="date-tab" data-days="custom">自定义</button>
+            </div>
+            <div class="custom-date" id="customDate" style="display: none;">
+                <input type="date" id="startDate" class="date-input">
+                <span class="date-separator">至</span>
+                <input type="date" id="endDate" class="date-input">
+                <button class="apply-btn" onclick="applyCustomDate()">应用</button>
+            </div>
+        </div>
+
+        <!-- 统计标签页 -->
+        <div class="stats-tabs">
+            <button class="stats-tab active" data-tab="all">总览</button>
+            <button class="stats-tab" data-tab="sale">出售统计</button>
+            <button class="stats-tab" data-tab="purchase">购买统计</button>
+            <button class="stats-tab" data-tab="withdraw">提现统计</button>
+            <button class="stats-tab" data-tab="recharge">充值统计</button>
+            <button class="stats-tab" data-tab="fee">手续费统计</button>
+        </div>
+        <!-- 总览统计 -->
+        <div class="stats-panel active" id="allPanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon amount-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">玩家总资产</span>
+                        <span class="card-value" id="totalAsset"></span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon amount-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">玩家冻结资产</span>
+                        <span class="card-value" id="totalFreeze"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon success-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">总充值金额</span>
+                        <span class="card-value" id="successRechargeAmount"></span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon trade-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                            <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">总手续费</span>
+                        <span class="card-value" id="totalFee"></span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon trade-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                            <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">购买系统钻石花费</span>
+                        <span class="card-value" id="totalBuySystemDiamondPrice"></span>
+                    </div>
+                </div>
+            </div>
+            <div><span style="color:red" id="billCheck"></span></div>
+            <div><span style="color:red" id="billPrice"></span></div>
+
+            <div class="data-table-container">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>昵称</th>
+                                <th>登录名</th>
+                                <th>授权充值</th>
+                                <th>usdt充值</th>
+                                <th>已结账金额</th>
+                                <th>剩余余额</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clubUserBillCheckTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- 出售钻石统计 -->
+        <div class="stats-panel" id="salePanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon sale-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">出售总量</span>
+                        <span class="card-value" id="saleTotalDiamond">-</span>
+                        <span class="card-unit">钻石</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon amount-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">出售总额</span>
+                        <span class="card-value" id="saleTotalAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon count-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">出售笔数</span>
+                        <span class="card-value" id="saleTotalCount">-</span>
+                        <span class="card-unit">笔</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon avg-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="20" x2="12" y2="10" />
+                            <line x1="18" y1="20" x2="18" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="16" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">平均单价</span>
+                        <span class="card-value" id="saleAvgPrice">¥-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">出售钻石趋势</h3>
+                    <div class="chart-legend">
+                        <span class="legend-item"><i class="legend-dot sale"></i>出售数量</span>
+                        <span class="legend-item"><i class="legend-dot amount"></i>出售金额</span>
+                    </div>
+                </div>
+                <div class="chart" id="saleChart"></div>
+            </div>
+            <div class="data-table-container">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>出售数量</th>
+                                <th>出售金额</th>
+                                <th>笔数</th>
+                                <th>平均单价</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saleTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 购买钻石统计 -->
+        <div class="stats-panel" id="purchasePanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon purchase-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">购买总量</span>
+                        <span class="card-value" id="purchaseTotalDiamond">-</span>
+                        <span class="card-unit">钻石</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon amount-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">购买总额</span>
+                        <span class="card-value" id="purchaseTotalAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon count-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">订单数</span>
+                        <span class="card-value" id="purchaseTotalCount">-</span>
+                        <span class="card-unit">笔</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon user-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">购买人数</span>
+                        <span class="card-value" id="purchaseUserCount">-</span>
+                        <span class="card-unit">人</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">购买钻石趋势</h3>
+                    <div class="chart-legend">
+                        <span class="legend-item"><i class="legend-dot purchase"></i>购买数量</span>
+                        <span class="legend-item"><i class="legend-dot amount"></i>购买金额</span>
+                    </div>
+                </div>
+                <div class="chart" id="purchaseChart"></div>
+            </div>
+            <div class="data-table-container">
+                <!--<div class="table-header">
+                    <h3 class="table-title">购买明细</h3>
+                    <button class="export-btn" onclick="exportData('purchase')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        导出
+                    </button>
+                </div>-->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>购买数量</th>
+                                <th>购买金额</th>
+                                <th>订单数</th>
+                                <th>买家数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchaseTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提现统计 -->
+        <div class="stats-panel" id="withdrawPanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon withdraw-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="19" x2="12" y2="5" />
+                            <polyline points="5 12 12 5 19 12" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">提现总额</span>
+                        <span class="card-value" id="withdrawTotalAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon success-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">成功金额</span>
+                        <span class="card-value" id="withdrawSuccessAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon pending-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">待处理</span>
+                        <span class="card-value" id="withdrawPendingAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon count-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">提现笔数</span>
+                        <span class="card-value" id="withdrawTotalCount">-</span>
+                        <span class="card-unit">笔</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 渠道筛选 -->
+            <!--<div class="channel-filter">
+                <span class="filter-label">提现渠道：</span>
+                <div class="channel-tabs">
+                    <button class="channel-tab active" data-channel="all">全部</button>
+                    <button class="channel-tab" data-channel="alipay">支付宝</button>
+                    <button class="channel-tab" data-channel="wechat">微信</button>
+                    <button class="channel-tab" data-channel="usdt">USDT</button>
+                    <button class="channel-tab" data-channel="bank">银行卡</button>
+                </div>
+            </div>-->
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">提现趋势</h3>
+                </div>
+                <div class="chart" id="withdrawChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">提现渠道分布</h3>
+                </div>
+                <div class="chart" id="withdrawChannelChart"></div>
+            </div>
+
+            <div class="data-table-container">
+                <!--<div class="table-header">
+                    <h3 class="table-title">提现明细</h3>
+                    <button class="export-btn" onclick="exportData('withdraw')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        导出
+                    </button>
+                </div>-->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>提现金额</th>
+                                <th>成功</th>
+                                <th>待处理</th>
+                                <th>失败</th>
+                                <th>笔数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 充值统计 -->
+        <div class="stats-panel" id="rechargePanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon recharge-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <polyline points="19 12 12 19 5 12" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">充值总额</span>
+                        <span class="card-value" id="rechargeTotalAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon success-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">成功金额</span>
+                        <span class="card-value" id="rechargeSuccessAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon pending-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">待支付</span>
+                        <span class="card-value" id="rechargePendingAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon user-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">充值人数</span>
+                        <span class="card-value" id="rechargeUserCount">-</span>
+                        <span class="card-unit">人</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 渠道筛选 -->
+            <!--<div class="channel-filter">
+                <span class="filter-label">充值渠道：</span>
+                <div class="channel-tabs">
+                    <button class="channel-tab active" data-channel="all">全部</button>
+                    <button class="channel-tab" data-channel="usdt">USDT</button>
+                    <button class="channel-tab" data-channel="manual">人工充值</button>
+                </div>
+            </div>-->
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">充值趋势</h3>
+                </div>
+                <div class="chart" id="rechargeChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">充值渠道分布</h3>
+                </div>
+                <div class="chart" id="rechargeChannelChart"></div>
+            </div>
+
+            <div class="data-table-container">
+                <!--<div class="table-header">
+                    <h3 class="table-title">充值明细</h3>
+                    <button class="export-btn" onclick="exportData('recharge')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        导出
+                    </button>
+                </div>-->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>充值金额</th>
+                                <th>成功</th>
+                                <th>待支付</th>
+                                <th>失败</th>
+                                <th>笔数</th>
+                                <th>人数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rechargeTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 手续费统计 -->
+        <div class="stats-panel" id="feePanel">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon fee-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                            <line x1="1" y1="10" x2="23" y2="10" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">手续费总收入</span>
+                        <span class="card-value large" id="feeTotalAmount">¥-</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon trade-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                            <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">交易总额</span>
+                        <span class="card-value" id="tradeTotal">¥-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">手续费收入趋势</h3>
+                    <div class="chart-legend">
+                        <span class="legend-item"><i class="legend-dot fee"></i>手续费</span>
+                        <span class="legend-item"><i class="legend-dot trade"></i>交易额</span>
+                    </div>
+                </div>
+                <div class="chart" id="feeChart"></div>
+            </div>
+            <div class="data-table-container">
+                <!--<div class="table-header">
+                    <h3 class="table-title">手续费明细</h3>
+                    <button class="export-btn" onclick="exportData('fee')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        导出
+                    </button>
+                </div>-->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>手续费</th>
+                                <th>笔数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feeTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 添加客服弹窗 -->
+    <div id="customerServiceModal" class="chat-modal2" style="display:none">
+        <div class="chat-container2">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-header-text">
+                        <h3>授权充值结账</h3>
+                    </div>
+                </div>
+                <button class="chat-close-btn" onclick="closeChat()">✕</button>
+            </div>
+            <div class="chat-input-area">
+                <div style="margin-bottom:80px;" id="payNickName"><h4>正在操作【】现金结账</h4></div>
+                <input type="number" class="chat-input2" id="payPriceInput" placeholder="请输入结账金额">
+                <button class="btn-primary" onclick="confirmPayBill()" v-if="recyclingTasks.status==-1">确认结账</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/common.js"></script>
+    <script>
+
+
+        const state = {
+            activeDays: 7,
+            startDate: "",
+            endDate: "",
+            activeTab: "all", // all ,sale / purchase / withdraw / recharge / fee
+            activeChannel: "all",
+
+            data: {
+                sale: null,
+                purchase: null,
+                withdraw: null,
+                recharge: null,
+                fee: null
+            }
+        };
+
+        async function loadStats() {
+            switch (state.activeTab) {
+                case "all": await loadAllStats(); break;
+                case "sale": await loadSaleStats(); break;
+                case "purchase": await loadPurchaseStats(); break;
+                case "withdraw": await loadWithdrawStats(); break;
+                case "recharge": await loadRechargeStats(); break;
+                case "fee": await loadFeeStats(); break;
+            }
+        }
+
+        function buildParams() {
+            if (state.activeDays !== "custom") {
+                return { days: state.activeDays };
+            }
+            return { startStr: state.startDate, endStr: state.endDate };
+        }
+
+        async function loadAllStats() {
+            const res = await api("/api/stats/all", "POST", buildParams());
+            //totalFreeze,//玩家冻结资产
+            //    totalAsset, //玩家总资产
+            //    totalFee,//总手续费
+            //    successRechargeAmount,  //充值成功金额
+
+            // 更新汇总卡片
+            document.getElementById("totalFreeze").innerText = res.totalFreeze.toFixed(2);
+            document.getElementById("totalAsset").innerText = res.totalAsset.toFixed(2);
+            document.getElementById("totalFee").innerText = res.totalFee.toFixed(2);
+            document.getElementById("totalBuySystemDiamondPrice").innerText = res.totalBuySystemDiamondPrice.toFixed(2);
+            document.getElementById("successRechargeAmount").innerText = res.successRechargeAmount.toFixed(2);;
+
+            var billCheckStr = "说明：总充值金额+手续费扣减-玩家总资产-玩家冻结资产-购买系统钻石花费应该等于0，如果不等于0且差异较大则说明帐有问题，需联系技术查看，如果差异减少，可能是手续费扣减时四舍五入导致的；实际等于：" + formatNumber(res);
+            document.getElementById("billCheck").innerText = billCheckStr;
+            var billPriceStr = "结账总额：" + res.totalBillPrice + ";已支付：" + res.totalPayPrice;
+            document.getElementById("billPrice").innerText = billPriceStr;
+
+            renderClubUserBillCheckTable(res.clubBillCheckList);
+            //clubUserBillCheckTableBody
+        }
+        function renderClubUserBillCheckTable(list) {
+            const body = document.getElementById("clubUserBillCheckTableBody");
+            body.innerHTML = "";
+
+            list.forEach(r => {
+                body.innerHTML += `
+             <tr>
+                 <td>${r.nickname}</td>
+                 <td>${r.login_name}</td>
+                 <td>¥${r.total_manual_recharge}</td>
+                 <td>¥${r.total_usdt_recharge}</td>
+                 <td>¥${r.total_cash_bill}</td>
+                 <td>${r.balance}</td>
+                 <td><button class="btn-buy" onclick="payBill('${r.nickname}','${r.login_name}')"> 现金结账</button></td>
+
+             </tr>`;
+            });
+        }
+        const payBillForm = {
+            nickname:"",
+            login_name:"",
+        }
+        function payBill(nickname, login_name) {
+            document.getElementById("customerServiceModal").style.display = "flex";
+            document.getElementById("payPriceInput").value = 0;
+            payBillForm.nickname = nickname;
+            payBillForm.login_name = login_name;
+            document.getElementById("payNickName").innerHTML = "正在操作【" + payBillForm.nickname +"】现金结账";
+        }
+        async function confirmPayBill() {
+            var payPrice = document.getElementById("payPriceInput").value;
+            const res = await api("/api/stats/payClubBill", "POST", {
+                login_name: payBillForm.login_name,
+                nickname: payBillForm.nickname,
+                payPrice: payPrice
+            });
+            if (res) {
+                document.getElementById("customerServiceModal").style.display = "none";
+                alert("结账成功！")
+                loadAllStats();
+            }
+        }
+        function closeChat() {
+            document.getElementById("customerServiceModal").style.display = "none";
+        }
+        function formatNumber(res) {
+            const successRecharge = parseFloat(res.successRechargeAmount.toFixed(2));
+            const totalFee = parseFloat(res.totalFee.toFixed(2));
+            const totalFreeze = parseFloat(res.totalFreeze.toFixed(2));
+            const totalAsset = parseFloat(res.totalAsset.toFixed(2));
+            const totalBuySystemDiamondPrice = parseFloat(res.totalBuySystemDiamondPrice.toFixed(2));
+            const result = successRecharge + totalFee - totalFreeze - totalAsset - totalBuySystemDiamondPrice;
+            return result.toFixed(2);
+        }
+
+        async function loadSaleStats() {
+            const res = await api("/api/stats/sale", "POST", buildParams());
+            state.data.sale = res;
+
+            // 更新汇总卡片
+            document.getElementById("saleTotalDiamond").innerText = res.summary.totalDiamond.toLocaleString();
+            document.getElementById("saleTotalAmount").innerText = "¥" + res.summary.totalAmount.toFixed(2);
+            document.getElementById("saleTotalCount").innerText = res.summary.totalCount.toLocaleString();
+            document.getElementById("saleAvgPrice").innerText = "¥" + res.summary.avgPrice;
+
+            renderSaleChart(res.table);
+            renderSaleTable(res.trend);
+        }
+
+        function renderSaleChart(list) {
+            const dom = document.getElementById("saleChart");
+            const chart = echarts.init(dom);
+
+            chart.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: {
+                    type: 'category',
+                    data: list.map(x => x.date),
+                },
+                yAxis: [
+                    { type: 'value', name: '数量' },
+                    { type: 'value', name: '金额' }
+                ],
+                series: [
+                    {
+                        name: "出售数量",
+                        type: 'bar',
+                        data: list.map(x => x.diamond)
+                    },
+                    {
+                        name: "出售金额",
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: list.map(x => x.amount)
+                    }
+                ]
+            });
+
+            window.addEventListener("resize", () => chart.resize());
+        }
+
+        function renderSaleTable(list) {
+            const body = document.getElementById("saleTableBody");
+            body.innerHTML = "";
+
+            list.forEach(r => {
+                body.innerHTML += `
+                    <tr>
+                        <td>${r.date}</td>
+                        <td>${r.diamond.toLocaleString()}</td>
+                        <td>¥${r.amount.toFixed(2)}</td>
+                        <td>${r.count}</td>
+                        <td>¥${r.avg.toFixed(4)}</td>
+                    </tr>`;
+            });
+        }
+
+        async function loadPurchaseStats() {
+            const res = await api("/api/stats/purchase", "POST", buildParams());
+            state.data.purchase = res;
+
+            document.getElementById("purchaseTotalDiamond").innerText = res.summary.totalDiamond.toLocaleString();
+            document.getElementById("purchaseTotalAmount").innerText = "¥" + res.summary.totalAmount.toFixed(2);
+            document.getElementById("purchaseTotalCount").innerText = res.summary.totalCount;
+            document.getElementById("purchaseUserCount").innerText = res.summary.userCount;
+
+            renderPurchaseChart(res.trend);
+            renderPurchaseTable(res.trend);
+        }
+
+        function renderPurchaseChart(list) {
+            const dom = document.getElementById("purchaseChart");
+            const chart = echarts.init(dom);
+
+            chart.setOption({
+                tooltip: { trigger: "axis" },
+                xAxis: { type: "category", data: list.map(x => x.date) },
+                yAxis: [
+                    { type: "value" },
+                    { type: "value" }
+                ],
+                series: [
+                    {
+                        name: "购买数量",
+                        type: "bar",
+                        data: list.map(x => x.diamond)
+                    },
+                    {
+                        name: "购买金额",
+                        type: "line",
+                        yAxisIndex: 1,
+                        data: list.map(x => x.amount)
+                    }
+                ]
+            });
+        }
+
+        function renderPurchaseTable(list) {
+            const body = document.getElementById("purchaseTableBody");
+            body.innerHTML = "";
+
+            list.forEach(r => {
+                body.innerHTML += `
+                <tr>
+                    <td>${r.date}</td>
+                    <td>${r.diamond.toLocaleString()}</td>
+                    <td>¥${r.amount.toFixed(2)}</td>
+                    <td>${r.count}</td>
+                    <td>${r.userCount}</td>
+                </tr>`;
+            });
+        }
+        async function loadWithdrawStats() {
+            const res = await api("/api/stats/withdraw", "POST", buildParams());
+            state.data.withdraw = res;
+
+            document.getElementById("withdrawTotalAmount").innerText = "¥" + res.summary.totalAmount.toFixed(2);
+            document.getElementById("withdrawSuccessAmount").innerText = "¥" + res.summary.successAmount.toFixed(2);
+            document.getElementById("withdrawPendingAmount").innerText = "¥" + res.summary.pendingAmount.toFixed(2);
+            document.getElementById("withdrawTotalCount").innerText = res.summary.totalCount;
+
+            renderWithdrawChart(res.trend);
+            renderWithdrawChannel(res.channel);
+            renderWithdrawTable(res.table);
+        }
+        function renderWithdrawChart(trend) {
+
+            const dates = trend.map(x => x.date);
+            const success = trend.map(x => x.success);
+            const pending = trend.map(x => x.pending);
+            const failed = trend.map(x => x.failed);
+
+            var withdrawChartInstance = echarts.init(document.getElementById('withdrawChart'));
+
+            withdrawChartInstance.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    textStyle: { color: "#fff" }
+                },
+                legend: {
+                    data: ["成功", "待处理", "失败"]
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: dates
+                },
+                yAxis: {
+                    type: 'value',
+                },
+                series: [
+                    {
+                        name: "成功",
+                        type: 'line',
+                        stack: "total",
+                        data: success
+                    },
+                    {
+                        name: "待处理",
+                        type: 'line',
+                        stack: "total",
+                        data: pending
+                    },
+                    {
+                        name: "失败",
+                        type: 'line',
+                        stack: "total",
+                        data: failed
+                    }
+                ]
+            });
+
+            window.addEventListener('resize', () => withdrawChartInstance.resize());
+        }
+        function renderWithdrawChannel(channelData) {
+
+            const pie = [];
+            channelData.forEach(item => {
+                pie.push({ value: item.amount, name: item.channel == "ZFB" ? "支付宝" : item.channel == "WX" ? "微信" : item.channel });
+            })
+
+
+            var withdrawChannelChartInstance = echarts.init(document.getElementById('withdrawChannelChart'));
+
+            withdrawChannelChartInstance.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: "rgba(0,0,0,0.7)",
+                    textStyle: { color: "#fff" }
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    label: { show: false },
+                    data: pie
+                }]
+            });
+
+            window.addEventListener('resize', () => withdrawChannelChartInstance.resize());
+        }
+        function renderWithdrawTable(trend) {
+            const tbody = document.getElementById("withdrawTableBody");
+            tbody.innerHTML = "";
+
+            trend.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${row.date}</td>
+                <td>¥${row.total.toFixed(2)}</td>
+                <td>¥${row.success.toFixed(2)}</td>
+                <td>¥${row.pending.toFixed(2)}</td>
+                <td>¥${row.fail.toFixed(2)}</td>
+                <td>${row.count}</td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }
+
+
+        async function loadRechargeStats() {
+            const res = await api("/api/stats/recharge", "POST", buildParams());
+            state.data.recharge = res;
+
+            document.getElementById("rechargeTotalAmount").innerText = "¥" + res.summary.totalAmount.toFixed(2);
+            document.getElementById("rechargeSuccessAmount").innerText = "¥" + res.summary.successAmount.toFixed(2);
+            document.getElementById("rechargePendingAmount").innerText = "¥" + res.summary.pendingAmount.toFixed(2);
+            document.getElementById("rechargeUserCount").innerText = res.summary.userCount;
+
+            renderRechargeChart(res.trend);
+            renderRechargeChannel(res.channel);
+            renderRechargeTable(res.trend);
+        }
+        function renderRechargeChart(trend) {
+
+            const dates = trend.map(x => x.date);
+            const success = trend.map(x => x.success);
+            const pending = trend.map(x => x.pending);
+            const failed = trend.map(x => x.failed);
+
+            var withdrawChartInstance = echarts.init(document.getElementById('rechargeChart'));
+
+            withdrawChartInstance.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    textStyle: { color: "#fff" }
+                },
+                legend: {
+                    data: ["成功", "待处理", "失败"]
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: dates
+                },
+                yAxis: {
+                    type: 'value',
+                },
+                series: [
+                    {
+                        name: "成功",
+                        type: 'line',
+                        stack: "total",
+                        data: success
+                    },
+                    {
+                        name: "待处理",
+                        type: 'line',
+                        stack: "total",
+                        data: pending
+                    },
+                    {
+                        name: "失败",
+                        type: 'line',
+                        stack: "total",
+                        data: failed
+                    }
+                ]
+            });
+
+            window.addEventListener('resize', () => withdrawChartInstance.resize());
+        }
+        function renderRechargeChannel(channelData) {
+
+            const pie = [];
+            channelData.forEach(item => {
+                pie.push({ value: item.amount, name: item.channel == "usdt" ? "USDT" : item.channel == "manual" ? "人工授权" : item.channel });
+            })
+
+
+            var withdrawChannelChartInstance = echarts.init(document.getElementById('rechargeChannelChart'));
+
+            withdrawChannelChartInstance.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: "rgba(0,0,0,0.7)",
+                    textStyle: { color: "#fff" }
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    label: { show: false },
+                    data: pie
+                }]
+            });
+
+            window.addEventListener('resize', () => withdrawChannelChartInstance.resize());
+        }
+        function renderRechargeTable(trend) {
+            const tbody = document.getElementById("rechargeTableBody");
+            tbody.innerHTML = "";
+
+            trend.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                 <td>${row.date}</td>
+                 <td>¥${row.total.toFixed(2)}</td>
+                 <td>¥${row.success.toFixed(2)}</td>
+                 <td>¥${row.pending.toFixed(2)}</td>
+                 <td>¥${row.fail.toFixed(2)}</td>
+                 <td>${row.count}</td>
+                 <td>${row.userCount}</td>
+     `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadFeeStats() {
+            const res = await api("/api/stats/fee", "POST", buildParams());
+            state.data.fee = res;
+
+            document.getElementById("feeTotalAmount").innerText = "¥" + -res.totalFee;
+            document.getElementById("tradeTotal").innerText = "¥" + res.tradeAmount;
+
+            renderFeeChart(res.trend);
+            renderFeeTable(res.trend);
+        }
+        function renderFeeChart(trend) {
+
+            const dates = trend.map(x => x.date);
+            const fees = trend.map(x => -x.fee);
+            const counts = trend.map(x => x.count);
+
+            var withdrawChartInstance = echarts.init(document.getElementById('feeChart'));
+
+            withdrawChartInstance.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    textStyle: { color: "#fff" }
+                },
+                legend: {
+                    data: ["手续费", "笔数"]
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: dates
+                },
+                yAxis: {
+                    type: 'value',
+                },
+                series: [
+                    {
+                        name: "手续费",
+                        type: 'line',
+                        stack: "total",
+                        data: fees
+                    },
+                    {
+                        name: "笔数",
+                        type: 'line',
+                        stack: "total",
+                        data: counts
+                    }
+                ]
+            });
+
+            window.addEventListener('resize', () => withdrawChartInstance.resize());
+        }
+        function renderFeeTable(trend) {
+            const tbody = document.getElementById("feeTableBody");
+            tbody.innerHTML = "";
+
+            trend.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${row.date}</td>
+                <td>¥${row.fee.toFixed(2)}</td>
+                <td>¥${row.count.toFixed(2)}</td>
+`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.querySelectorAll(".stats-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".stats-tab").forEach(t => t.classList.remove("active"));
+                document.querySelectorAll(".stats-panel").forEach(p => p.classList.remove("active"));
+
+                tab.classList.add("active");
+
+                state.activeTab = tab.dataset.tab;
+                document.getElementById(state.activeTab + "Panel").classList.add("active");
+
+                loadStats();
+            });
+        });
+
+        document.querySelectorAll(".date-tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".date-tab").forEach(t => t.classList.remove("active"));
+                btn.classList.add("active");
+
+                const d = btn.dataset.days;
+
+                if (d === "custom") {
+                    document.getElementById("customDate").style.display = "flex";
+                    state.activeDays = "custom";
+                } else {
+                    document.getElementById("customDate").style.display = "none";
+                    state.activeDays = parseInt(d);
+                    loadStats();
+                }
+            });
+        });
+
+        function applyCustomDate() {
+            state.startDate = document.getElementById("startDate").value;
+            state.endDate = document.getElementById("endDate").value;
+
+            if (state.startDate && state.endDate) {
+                loadStats();
+            }
+        }
+        loadStats();
+    </script>
+</body>
+</html>

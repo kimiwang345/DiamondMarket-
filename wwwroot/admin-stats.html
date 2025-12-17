@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>页面统计 - 管理后台</title>
+    <link rel="stylesheet" href="admin-stats-styles.css">
+    <!--<link rel="stylesheet" href="styles.css">-->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- 顶部导航 -->
+        <header class="header">
+
+            <div class="header-content">
+                <a href="profile.html" class="back-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </a>
+                <div class="logo">
+                    <span class="logo-text">报表统计</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme2()">🌓</button>
+            </div>
+        </header>
+
+        <!-- 日期筛选 -->
+        <div class="date-filter">
+            <div class="date-tabs">
+                <button class="date-tab active" data-days="7">近7天</button>
+                <button class="date-tab" data-days="14">近14天</button>
+                <button class="date-tab" data-days="30">近30天</button>
+            </div>
+        </div>
+
+        <!-- 总览卡片 -->
+        <div class="stats-overview">
+            <div class="overview-card">
+                <div class="overview-icon pv-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </div>
+                <div class="overview-info">
+                    <span class="overview-label">总PV</span>
+                    <span class="overview-value" id="totalPV">{{reportData.totalPV}}</span>
+                </div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon uv-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                </div>
+                <div class="overview-info">
+                    <span class="overview-label">总UV</span>
+                    <span class="overview-value" id="totalUV">{{reportData.totalUV}}</span>
+                </div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon avg-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                </div>
+                <div class="overview-info">
+                    <span class="overview-label">人均PV</span>
+                    <span class="overview-value" id="avgPV">{{reportData.avgPV}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PV/UV趋势图 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">PV/UV趋势</h3>
+                <div class="chart-legend">
+                    <span class="legend-item"><i class="legend-dot pv"></i>PV</span>
+                    <span class="legend-item"><i class="legend-dot uv"></i>UV</span>
+                </div>
+            </div>
+            <div id="trendChart" class="chart-container"></div>
+        </div>
+
+        <!-- 页面排行 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">页面访问排行</h3>
+                <div class="chart-tabs">
+                    <button class="chart-tab active" data-type="pv">按PV</button>
+                    <button class="chart-tab" data-type="uv">按UV</button>
+                </div>
+            </div>
+            <div id="rankChart" class="chart-container"></div>
+        </div>
+
+
+        <!-- 实时访问 -->
+        <div class="realtime-card">
+            <div class="realtime-header">
+                <h3 class="chart-title">
+                    <span class="realtime-dot"></span>
+                    实时访问
+                </h3>
+                <span class="realtime-count">当前在线: <strong>{{onlineCount}}</strong> 人</span>
+            </div>
+            <div class="realtime-list" id="realtimeList">
+
+            </div>
+        </div>
+
+    </div>
+    <!-- 公共脚本：tinyVue + api/主题 -->
+    <script src="js/tinyVue.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        function toggleTheme2() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        initTheme();
+        // 初始化主题
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+
+        const vm = tinyVue({
+            el: "#app",
+            data: {
+                "onlineCount":0,
+                "reportData": {
+                    "totalPV": 0,
+                    "totalUV": 0,
+                    "avgPV": 0,
+                    "trends": [
+                    ],
+                    "rank": [
+                    ],
+                    "table": [
+                        {
+                            "page": "/diamond.html",
+                            "pv": 45231,
+                            "uv": 8912,
+                            "avgStay": "3m 24s",
+                            "bounce": "32%"
+                        }
+                    ]
+                },
+                "realtime":[],
+            }
+        });
+        loadData(7);
+        async function loadData(days) {
+            const resp = await api("/api/adminStats/initData?days=" + days);
+            vm.reportData = resp.data;
+            vm.$forceUpdate();
+            initTrendChart();
+            initRankChart();
+
+        }
+
+
+
+        // 日期标签切换
+        document.querySelectorAll('.date-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const days = this.dataset.days;
+                loadDataByDays(days);
+            });
+        });
+
+        // 图表标签切换
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const type = this.dataset.type;
+                updateRankChart(type);
+                
+            });
+        });
+
+        // 按日期查询
+        function searchByDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
+                console.log('查询日期范围:', startDate, '-', endDate);
+                // 这里调用API获取数据
+            }
+        }
+
+
+        // 加载数据
+        function loadDataByDays(days) {
+            console.log('加载最近', days, '天数据');
+            loadData(days);
+            // 这里调用API获取数据并更新图表
+        }
+
+        // 初始化趋势图
+        function initTrendChart() {
+            const chart = echarts.init(document.getElementById('trendChart'));
+            const colors = getThemeColors();
+
+            const dates = [];
+            const pvData = [];
+            const uvData = [];
+            var trends = vm.reportData.trends;
+            trends.forEach((item => {
+                dates.push(item["date"].split("T")[0]);
+                pvData.push(item["pv"]);
+                uvData.push(item["uv"]);
+            }))
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    borderColor: 'transparent',
+                    textStyle: { color: '#fff' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates,
+                    axisLine: { lineStyle: { color: colors.lineColor } },
+                    axisLabel: { color: colors.textColor }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: colors.lineColor } },
+                    axisLabel: { color: colors.textColor }
+                },
+                series: [
+                    {
+                        name: 'PV',
+                        type: 'line',
+                        smooth: true,
+                        data: pvData,
+                        lineStyle: { color: colors.pvColor, width: 3 },
+                        itemStyle: { color: colors.pvColor },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(79, 172, 254, 0.3)' },
+                                { offset: 1, color: 'rgba(79, 172, 254, 0)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'UV',
+                        type: 'line',
+                        smooth: true,
+                        data: uvData,
+                        lineStyle: { color: colors.uvColor, width: 3 },
+                        itemStyle: { color: colors.uvColor },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(245, 166, 35, 0.3)' },
+                                { offset: 1, color: 'rgba(245, 166, 35, 0)' }
+                            ])
+                        }
+                    }
+                ]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 初始化排行图
+        function initRankChart(type = 'pv') {
+            const chart = echarts.init(document.getElementById('rankChart'));
+            const colors = getThemeColors();
+
+            const pages = [];
+            const pvValues = [];
+            const uvValues = [];
+
+            var rank = vm.reportData.rank;
+            rank.forEach((item => {
+                pages.push(item["page"]);
+                pvValues.push(item["pv"]);
+                uvValues.push(item["uv"]);
+            }))
+
+            const data = type === 'pv' ? pvValues : uvValues;
+            const color = type === 'pv' ? colors.pvColor : colors.uvColor;
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    borderColor: 'transparent',
+                    textStyle: { color: '#fff' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '8%',
+                    bottom: '3%',
+                    top: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: colors.lineColor } },
+                    axisLabel: { color: colors.textColor }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: pages.reverse(),
+                    axisLine: { lineStyle: { color: colors.lineColor } },
+                    axisLabel: { color: colors.textColor }
+                },
+                series: [
+                    {
+                        type: 'bar',
+                        data: data.reverse(),
+                        barWidth: '50%',
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                { offset: 0, color: color },
+                                { offset: 1, color: type === 'pv' ? '#00f2fe' : '#ffc107' }
+                            ]),
+                            borderRadius: [0, 4, 4, 0]
+                        },
+                        label: {
+                            show: true,
+                            position: 'right',
+                            color: colors.textColor,
+                            formatter: '{c}'
+                        }
+                    }
+                ]
+            };
+
+            chart.setOption(option);
+            window.trendRankChart = chart;
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 更新排行图
+        function updateRankChart(type) {
+            initRankChart(type);
+        }
+
+      
+
+        // 初始化所有图表
+        function initCharts() {
+            initTrendChart();
+            initRankChart('pv');
+        }
+
+        // =============== ⭐ 实时访问（从后端获取） ===============
+        async function updateRealtime() {
+            try {
+                const resp = await api("/api/adminStats/realtime");
+                const list = resp.list || [];
+                vm.onlineCount = resp.onlineCount || 0;
+                vm.$forceUpdate();
+                renderRealtime(list);
+            } catch (err) {
+                console.error("实时访问加载失败:", err);
+            }
+        }
+
+
+        // =============== ⭐ 渲染实时访问 UI ===============
+        function renderRealtime(list) {
+            const container = document.getElementById("realtimeList");
+            container.innerHTML = ""; // 清空
+
+            list.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "realtime-item";
+
+                // 时间格式
+                const seconds = getSecondsAgo(item.time);
+                const timeText = seconds <= 2 ? "刚刚" : `${seconds}秒前`;
+
+                div.innerHTML = `
+            <span class="realtime-time">${timeText}</span>
+            <span class="realtime-page">${item.page}</span>
+            <span class="realtime-user">用户 #${item.nickname}</span>
+        `;
+
+                container.appendChild(div);
+            });
+        }
+
+
+        // =============== ⭐ 工具函数：计算时间差秒数 ===============
+        function getSecondsAgo(dateStr) {
+            const now = new Date();
+            const t = new Date(dateStr);
+            return Math.max(1, Math.floor((now - t) / 1000));
+        }
+
+
+        // =============== ⭐ 启动定时任务 ===============
+        function startRealtimeMonitor() {
+            updateRealtime();         // 立即运行一次
+            setInterval(updateRealtime, 5000);  // 每 5 秒刷新
+        }
+
+        // 页面加载后运行
+        document.addEventListener("DOMContentLoaded", startRealtimeMonitor);
+
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            initTheme();
+            //initCharts();
+
+            // 设置默认日期
+            //const today = new Date();
+            //const weekAgo = new Date(today);
+            //weekAgo.setDate(weekAgo.getDate() - 7);
+
+            //document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            //document.getElementById('startDate').value = weekAgo.toISOString().split('T')[0];
+        });
+
+        // 获取主题色
+        function getThemeColors() {
+            const isDark = document.body.getAttribute('data-theme') !== 'light';
+            return {
+                textColor: isDark ? '#a0a0a0' : '#666666',
+                lineColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                pvColor: '#4facfe',
+                uvColor: '#f5a623',
+                backgroundColor: 'transparent'
+            };
+        }
+    </script>
+</body>
+</html>
