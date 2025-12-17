@@ -3,3 +3,4 @@ bin/
 wwwroot/upload/
 .vs/
 .config/
+Properties/
