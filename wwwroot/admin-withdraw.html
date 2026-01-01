@@ -72,7 +72,9 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">用户名</span>
-                            <span class="info-value">{{item.nickname}}</span>
+                            <span class="info-value">{{item.nickname}}
+                                <button class="copy-btn" v-on:click="queryGameUser(item.user_id)">查询游戏账号</button>
+                            </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">收款人</span>
@@ -134,6 +136,17 @@
             </div>
         </div>
 
+        <!-- 查询玩家游戏账号 -->
+        <div class="modal-overlay active" v-if="gameUserShow" style="display:none">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-title">关联游戏账号</div>
+                <textarea class="modal-input" id="gameUserText" disabled style="height: 100px; resize: none;"></textarea>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" v-on:click="gameUserShow=false">关闭</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast提示 -->
         <div class="toast" id="toast"></div>
 
@@ -160,6 +173,7 @@
             el: "#app",
             data: {
                 rejectModal: false,
+                gameUserShow: false,
                 withdrawLogs: [],
                 status: -1,
                 rejectReason:"",
@@ -301,6 +315,14 @@
 
                 loadData(false);
             }
+        }
+        async function queryGameUser(userId) {
+            const res = await api(`/api/finance/queryGameUser/${userId}`, "POST");
+            if (!res) return;
+            vm.gameUserShow = true;
+            
+            document.getElementById('gameUserText').value = res.data;
+
         }
 
         // 完成提现

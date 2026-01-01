@@ -132,6 +132,7 @@
                                 <th>usdt充值</th>
                                 <th>已结账金额</th>
                                 <th>剩余余额</th>
+                                <th>未结账</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -703,6 +704,7 @@
                  <td>¥${r.total_usdt_recharge}</td>
                  <td>¥${r.total_cash_bill}</td>
                  <td>${r.balance}</td>
+                 <td>${(r.total_manual_recharge - r.total_usdt_recharge - r.total_cash_bill - r.balance).toFixed(2)}</td>
                  <td><button class="btn-buy" onclick="payBill('${r.nickname}','${r.login_name}')"> 现金结账</button></td>
 
              </tr>`;

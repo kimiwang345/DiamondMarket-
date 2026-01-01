@@ -57,7 +57,7 @@ namespace DiamondMarket.Controllers
                 // 生成 100.00000 ~ 100.99999
                 Random rand = new Random();
 
-                double result = req.amount/ usdtToCny+rand.NextDouble();
+                double result = req.amount / usdtToCny + rand.NextDouble();
 
                 // 格式化五位小数
                 string value = result.ToString("F5");
@@ -71,14 +71,15 @@ namespace DiamondMarket.Controllers
                     pay_url = usdtPayUrl,
                     pay_info = "",
                     withdraw_log_id = 0,
-                    status = 0, 
+                    status = 0,
                     create_time = DateTime.Now
                 };
                 _db.recharge_log.Add(rechargeLog);
             }
             else if (req.pay_channel == "manual")
             {
-                if (user.user_type!=2) {
+                if (user.user_type != 2)
+                {
                     return Ok(new { code = 400, msg = "该用户无法申请人工支付" });
                 }
                 rechargeLog = new RechargeLog
@@ -95,9 +96,10 @@ namespace DiamondMarket.Controllers
                     create_time = DateTime.Now
                 };
                 _db.recharge_log.Add(rechargeLog);
-                
+
             }
-            else {
+            else
+            {
                 return Ok(new { code = 404, msg = "支付渠道不存在" });
             }
 
@@ -105,7 +107,7 @@ namespace DiamondMarket.Controllers
 
             await _db.SaveChangesAsync();
 
-            return Ok(new { code = 0, msg = "充值成功", data = rechargeLog, dataUrl= dataUrl });
+            return Ok(new { code = 0, msg = "充值成功", data = rechargeLog, dataUrl = dataUrl });
         }
 
         // 充值手动处理完成
@@ -164,7 +166,7 @@ namespace DiamondMarket.Controllers
                 return NotFound(new { code = 404, msg = "无权限" });
             }
             var rechargeLog = await _db.recharge_log.FindAsync(id);
-           
+
             rechargeLog.status = 2;
             await _db.SaveChangesAsync();
             return Ok(new { code = 0, msg = "ok" });
@@ -184,9 +186,9 @@ namespace DiamondMarket.Controllers
         public async Task<IActionResult> Withdraw([FromBody] WithdrawRequest req)
         {
             // 金额必须是 100 的整数倍
-            if (req.amount <50)
+            if (req.amount < 50)
                 return Ok(new { code = 400, msg = "提现金额必须大于是 50" });
-            if (req.amount %10!=0)
+            if (req.amount % 10 != 0)
                 return Ok(new { code = 400, msg = "提现金额必须10的倍数" });
 
             var claim = User.FindFirst("user_id");
@@ -212,8 +214,10 @@ namespace DiamondMarket.Controllers
             {
                 return Ok(new { code = 400, msg = "该用户无法提现" });
             }
-            if (req.pay_channel== "WX"|| req.pay_channel == "ZFB") {
-                if (string.IsNullOrEmpty(req.pay_url)) {
+            if (req.pay_channel == "WX" || req.pay_channel == "ZFB")
+            {
+                if (string.IsNullOrEmpty(req.pay_url))
+                {
                     return Ok(new { code = 400, msg = "请上传收款码" });
                 }
                 if (!req.pay_url.Contains("upload"))
@@ -229,7 +233,7 @@ namespace DiamondMarket.Controllers
             user.amount -= req.amount;
             user.freeze_amount += req.amount;
 
-           
+
 
             // 写提现记录
             var withdraw = new WithdrawLog
@@ -257,7 +261,7 @@ namespace DiamondMarket.Controllers
                 create_time = DateTime.Now
             };
             _db.user_balance_log.Add(balanceLog);
-           
+
 
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
@@ -414,11 +418,11 @@ namespace DiamondMarket.Controllers
 
             var item = await _db.withdraw_log.FindAsync(id);
             if (item == null) return NotFound(new { code = 404, msg = "提现不存在" });
-            if (item.status !=0) return NotFound(new { code = 404, msg = "状态不正确" });
+            if (item.status != 0) return NotFound(new { code = 404, msg = "状态不正确" });
             item.status = 1; // 处理中
             await _db.SaveChangesAsync();
 
-            return Ok(new { code = 0, msg = "ok"});
+            return Ok(new { code = 0, msg = "ok" });
         }
 
 
@@ -432,7 +436,7 @@ namespace DiamondMarket.Controllers
                 return Unauthorized(new { code = 401, msg = "未登录或 token 失效" });
             var userId = long.Parse(User.FindFirst("user_id")!.Value);
 
-            
+
 
             using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
 
@@ -448,7 +452,7 @@ namespace DiamondMarket.Controllers
 
             var item = await _db.withdraw_log.FindAsync(id);
             if (item == null) return NotFound(new { code = 404, msg = "提现不存在" });
-            if (item.status !=1) return NotFound(new { code = 404, msg = "状态不正确" });
+            if (item.status != 1) return NotFound(new { code = 404, msg = "状态不正确" });
             item.status = 2; // 完成
             // 悲观锁，确保不会并发扣余额
             var user = await _db.user_info
@@ -476,12 +480,12 @@ namespace DiamondMarket.Controllers
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
 
-            return Ok(new { code = 0, msg = "ok"});
+            return Ok(new { code = 0, msg = "ok" });
         }
 
 
 
-       
+
 
         public class CloseWithdrawRequest
         {
@@ -508,7 +512,7 @@ namespace DiamondMarket.Controllers
 
             var item = await _db.withdraw_log.FindAsync(req.id);
             if (item == null) return Ok(new { code = 404, msg = "提现不存在" });
-            if (item.status !=1) return Ok(new { code = 404, msg = "状态不正确" });
+            if (item.status != 1) return Ok(new { code = 404, msg = "状态不正确" });
             item.status = 3; // 关闭
             item.remark = req.remark;
             // 悲观锁，确保不会并发扣余额
@@ -538,7 +542,27 @@ namespace DiamondMarket.Controllers
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
 
-            return Ok(new { code = 0, msg = "ok"});
+            return Ok(new { code = 0, msg = "ok" });
+        }
+
+        [HttpPost("queryGameUser/{userId:long}")]
+        public async Task<IActionResult> queryGameUser(long userId)
+        {
+            if (userId <= 0)
+                return BadRequest(new { code = 400, msg = "userId 无效" });
+
+            var list = await _db.game_account
+                .Where(x => x.user_id == userId)
+                .Select(x => x.game_user)
+                .Distinct()              // ✅ 等价于 group by
+                .ToListAsync();
+
+            return Ok(new
+            {
+                code = 0,
+                msg = "ok",
+                data = list
+            });
         }
 
     }
