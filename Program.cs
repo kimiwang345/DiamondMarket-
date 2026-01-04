@@ -10,12 +10,35 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
-var connStr = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<AppDbContext>(options =>
+// ===== 读取是否跑任务 =====
+bool runTasks = builder.Configuration.GetValue<bool>("RunTasks");
+
+// ===== Kestrel 并发保护 =====
+builder.WebHost.ConfigureKestrel(options =>
 {
-    options.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+    options.Limits.MaxConcurrentConnections = 2000;
+    options.Limits.MaxConcurrentUpgradedConnections = 2000;
+    options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 });
+// ===== 扩大 ThreadPool（非常关键）=====
+ThreadPool.SetMinThreads(200, 200);
+
+// DbContext
+//var connStr = builder.Configuration.GetConnectionString("Default");
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//{
+//    options.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+//});
+// ===== DB =====
+builder.Services.AddDbContextPool<AppDbContext>(options =>
+{
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("Default"),
+        ServerVersion.AutoDetect(
+            builder.Configuration.GetConnectionString("Default")
+        )
+    );
+}, poolSize: 128);
 
 // Controllers
 builder.Services.AddControllers()
@@ -23,8 +46,11 @@ builder.Services.AddControllers()
 
 // 注册 HttpClient
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<RecyclingTaskWorker>();
-builder.Services.AddHostedService<UsdtWatcher>();
+if (runTasks) {
+    builder.Services.AddHostedService<RecyclingTaskWorker>();
+    builder.Services.AddHostedService<UsdtWatcher>();
+}
+
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<LoggingFilter>(); // 全局拦截

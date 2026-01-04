@@ -704,7 +704,7 @@
                  <td>¥${r.total_usdt_recharge}</td>
                  <td>¥${r.total_cash_bill}</td>
                  <td>${r.balance}</td>
-                 <td>${(r.total_manual_recharge - r.total_usdt_recharge - r.total_cash_bill - r.balance).toFixed(2)}</td>
+                 <td>${r.total_manual_recharge == 0 ? 0 :(r.total_manual_recharge - r.total_usdt_recharge - r.total_cash_bill - r.balance).toFixed(2)}</td>
                  <td><button class="btn-buy" onclick="payBill('${r.nickname}','${r.login_name}')"> 现金结账</button></td>
 
              </tr>`;
