@@ -355,6 +355,7 @@ namespace DiamondMarket.Controllers
 
             var userId = long.Parse(claim.Value);
             // 加锁买家
+            using var tx = await _db.Database.BeginTransactionAsync();
             var buyer = await _db.user_info
                 .FromSqlRaw("SELECT * FROM user_info WHERE id = {0} FOR UPDATE", userId)
                 .FirstOrDefaultAsync();
@@ -392,7 +393,7 @@ namespace DiamondMarket.Controllers
                 return Ok(new { code = 400, msg = "未配置余额支付渠道，请联系管理" });
             }
 
-            using var tx = await _db.Database.BeginTransactionAsync();
+           
             //扣除余额
             
             var buyerBefore = buyer.amount;

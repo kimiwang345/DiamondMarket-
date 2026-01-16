@@ -124,10 +124,15 @@ namespace DiamondMarket.Controllers
             {
                 return NotFound(new { code = 404, msg = "无权限" });
             }
-            var rechargeLog = await _db.recharge_log.FindAsync(id);
-            var rechargeUser = await _db.user_info.FindAsync(rechargeLog.user_id);
-
             using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            //var rechargeLog = await _db.recharge_log.FindAsync(id);
+            var rechargeLog = await _db.recharge_log
+                .FromSqlRaw("SELECT * FROM recharge_log WHERE id = {0} and status=0 FOR UPDATE", id)
+                .FirstOrDefaultAsync();
+            if (rechargeLog==null) {
+                return NotFound(new { code = 404, msg = "充值订单不存在" });
+            }
+            var rechargeUser = await _db.user_info.FindAsync(rechargeLog.user_id);
 
             var buyerAfter = rechargeUser.amount + rechargeLog.amount;
 
@@ -165,8 +170,13 @@ namespace DiamondMarket.Controllers
             {
                 return NotFound(new { code = 404, msg = "无权限" });
             }
-            var rechargeLog = await _db.recharge_log.FindAsync(id);
-
+            var rechargeLog = await _db.recharge_log
+                .FromSqlRaw("SELECT * FROM recharge_log WHERE id = {0} and status=0 ", id)
+                .FirstOrDefaultAsync();
+            if (rechargeLog == null)
+            {
+                return NotFound(new { code = 404, msg = "充值订单不存在" });
+            }
             rechargeLog.status = 2;
             await _db.SaveChangesAsync();
             return Ok(new { code = 0, msg = "ok" });
